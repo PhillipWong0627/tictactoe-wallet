@@ -24,6 +24,7 @@ class BoardState extends ChangeNotifier {
   final ChangeNotifier playerWon = ChangeNotifier();
 
   final ChangeNotifier aiOpponentWon = ChangeNotifier();
+  final ChangeNotifier draw = ChangeNotifier();
 
   List<Tile>? _winningLine;
 
@@ -96,6 +97,8 @@ class BoardState extends ChangeNotifier {
   void dispose() {
     playerWon.dispose();
     aiOpponentWon.dispose();
+    draw.dispose();
+
     super.dispose();
   }
 
@@ -188,31 +191,42 @@ class BoardState extends ChangeNotifier {
     final playerJustWon = _getWinner() == setting.playerSide;
 
     if (playerJustWon) {
-      // Player won with this move.
       playerWon.notifyListeners();
-    }
-
-    notifyListeners();
-
-    if (!playerJustWon && _hasOpenTiles) {
-      // Time for AI to move.
-      await Future.delayed(const Duration(milliseconds: 300));
-      assert(_isLocked);
-      assert(
-          _hasOpenTiles, 'Somehow, tiles got taken while waiting for AI turn');
-      final tile = aiOpponent.chooseNextMove(this);
-      _takeTile(tile, setting.aiOpponentSide);
-
-      if (_getWinner() == setting.aiOpponentSide) {
-        // Player won with this move.
-        aiOpponentWon.notifyListeners();
-      } else {
-        // Play continues.
-        _isLocked = false;
-      }
-
       notifyListeners();
+      return;
     }
+
+    // ADDED: if player didn't win and there are no open tiles -> DRAW
+    if (!_hasOpenTiles) {
+      draw.notifyListeners();
+      notifyListeners();
+      return;
+    }
+
+    // Time for AI to move.
+    await Future.delayed(const Duration(milliseconds: 300));
+    assert(_isLocked);
+    assert(_hasOpenTiles, 'Somehow, tiles got taken while waiting for AI turn');
+
+    final aiTile = aiOpponent.chooseNextMove(this);
+    _takeTile(aiTile, setting.aiOpponentSide);
+
+    if (_getWinner() == setting.aiOpponentSide) {
+      aiOpponentWon.notifyListeners();
+      notifyListeners();
+      return;
+    }
+
+    // ADDED: after AI move, if nobody won and no open tiles -> DRAW
+    if (!_hasOpenTiles) {
+      draw.notifyListeners();
+      notifyListeners();
+      return;
+    }
+
+    // Play continues.
+    _isLocked = false;
+    notifyListeners();
   }
 
   Side whoIsAt(Tile tile) {

@@ -103,7 +103,7 @@ class SettingsScreen extends StatelessWidget {
         ),
         rectangularMenuArea: RoughButton(
           onTap: () {
-            GoRouter.of(context).pop();
+            context.pop(); // back (single pop is enough)
           },
           textColor: palette.ink,
           child: const Text('Back'),

@@ -27,7 +27,22 @@ import 'preloaded_banner_ad.dart';
 /// namely the `anchored_adaptive_example.dart` file:
 /// https://github.com/googleads/googleads-mobile-flutter/blob/main/packages/google_mobile_ads/example/lib/anchored_adaptive_example.dart
 class BannerAdWidget extends StatefulWidget {
-  const BannerAdWidget({super.key});
+  /// If true, uses Anchored Adaptive banner (recommended).
+  final bool useAdaptive;
+
+  /// Fallback when adaptive size isn't available. Defaults to 320x50 banner.
+  final AdSize fallbackSize;
+
+  /// Optional top/bottom horizontal padding you might have in the layout.
+  /// This is subtracted from screen width for better adaptive sizing.
+  final EdgeInsets safeAreaPadding;
+
+  const BannerAdWidget({
+    super.key,
+    this.useAdaptive = true,
+    this.fallbackSize = AdSize.banner, // 320x50 (smaller than MREC)
+    this.safeAreaPadding = EdgeInsets.zero,
+  });
 
   @override
   State<BannerAdWidget> createState() => _BannerAdWidgetState();
@@ -114,21 +129,41 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
       _adLoadingState = _LoadingState.loading;
     });
 
-    AdSize size;
+    // AdSize size;
+    AdSize size = widget.fallbackSize;
 
-    if (useAnchoredAdaptiveSize) {
+    // if (useAnchoredAdaptiveSize) {
+    //   final AnchoredAdaptiveBannerAdSize? adaptiveSize =
+    //       await AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
+    //           MediaQuery.of(context).size.width.truncate());
+
+    //   if (adaptiveSize == null) {
+    //     _log.warning('Unable to get height of anchored banner.');
+    //     size = AdSize.banner;
+    //   } else {
+    //     size = adaptiveSize;
+    //   }
+    // } else {
+    //   size = AdSize.mediumRectangle;
+    // }
+    if (widget.useAdaptive) {
+      // Compute available width (subtract padding if your layout has it).
+      final screenWidth = MediaQuery.of(context).size.width;
+      final availableWidth = (screenWidth -
+              widget.safeAreaPadding.left -
+              widget.safeAreaPadding.right)
+          .truncate();
+
       final AnchoredAdaptiveBannerAdSize? adaptiveSize =
           await AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
-              MediaQuery.of(context).size.width.truncate());
+              availableWidth);
 
       if (adaptiveSize == null) {
-        _log.warning('Unable to get height of anchored banner.');
-        size = AdSize.banner;
+        _log.warning('Unable to get height of anchored adaptive banner. '
+            'Falling back to ${widget.fallbackSize.width}x${widget.fallbackSize.height}.');
       } else {
         size = adaptiveSize;
       }
-    } else {
-      size = AdSize.mediumRectangle;
     }
 
     if (!mounted) return;
@@ -141,13 +176,14 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
       // you replace this with your own, production ad unit ID,
       // created in https://apps.admob.com/.
       adUnitId: Theme.of(context).platform == TargetPlatform.android
-          ? 'ca-app-pub-3940256099942544/6300978111'
-          : 'ca-app-pub-3940256099942544/2934735716',
+          ? 'ca-app-pub-3457855080577194/9115953980'
+          : 'ca-app-pub-3457855080577194/7200237080',
       size: size,
       request: const AdRequest(),
       listener: BannerAdListener(
         onAdLoaded: (ad) {
-          _log.info(() => 'Ad loaded: ${ad.responseInfo}');
+          _log.info(() => 'Ad loaded: ${ad.responseInfo} '
+              '(${(ad as BannerAd).size.width}x${ad.size.height})');
           setState(() {
             // When the ad is loaded, get the ad size and use it to set
             // the height of the ad container.
@@ -158,6 +194,9 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
         onAdFailedToLoad: (ad, error) {
           _log.warning('Banner failedToLoad: $error');
           ad.dispose();
+          if (mounted) {
+            setState(() => _adLoadingState = _LoadingState.initial);
+          }
         },
         onAdImpression: (ad) {
           _log.info('Ad impression registered');
@@ -183,9 +222,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
     }
     if (!mounted) return;
 
-    setState(() {
-      _adLoadingState = _LoadingState.loaded;
-    });
+    setState(() => _adLoadingState = _LoadingState.loaded);
   }
 }
 

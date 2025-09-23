@@ -53,7 +53,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '896194001523',
     projectId: 'tic-tac-toe-flutter-game',
     storageBucket: 'tic-tac-toe-flutter-game.appspot.com',
-    iosClientId: '896194001523-147dv4s44ieqlavbbso6p00fqk0p952f.apps.googleusercontent.com',
+    iosClientId:
+        '896194001523-147dv4s44ieqlavbbso6p00fqk0p952f.apps.googleusercontent.com',
     iosBundleId: 'dev.flutter.tictactoe',
   );
 }

@@ -99,19 +99,36 @@ class _LevelButton extends StatelessWidget {
               : null,
           soundEffect: SfxType.erase,
           child: SizedBox.expand(
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Image.asset(
-                'assets/images/$number.png',
-                semanticLabel: 'Level $number',
-                fit: BoxFit.cover,
-                color: available
-                    ? palette.redPen
-                    : availableWithSkip
-                        ? Color.alphaBlend(
-                            palette.redPen.withOpacity(0.6), palette.ink)
-                        : palette.ink,
-              ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Image.asset(
+                    'assets/images/$number.png',
+                    semanticLabel: 'Level $number',
+                    fit: BoxFit.cover,
+                    color: available
+                        ? palette.redPen
+                        : availableWithSkip
+                            ? Color.alphaBlend(
+                                palette.redPen.withValues(alpha: 0.6),
+                                palette.ink)
+                            : palette.ink,
+                  ),
+                ),
+                // Lock icon (only if not available)
+                if (!available && !availableWithSkip)
+                  Positioned(
+                    // right: 20,
+                    bottom: 4, // place lock under the number
+                    child: Icon(
+                      Icons.lock,
+                      size: 28,
+                      color: palette.ink,
+                    ),
+                  ),
+              ],
             ),
           )),
     );

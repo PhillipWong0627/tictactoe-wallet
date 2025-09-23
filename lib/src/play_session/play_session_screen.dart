@@ -48,6 +48,21 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
 
   late final AiOpponent opponent;
 
+  void _onDraw() {
+    if (!mounted) return;
+
+    // optional niceties:
+    final audio = context.read<AudioController>();
+    audio.playSfx(SfxType.buttonTap);
+
+    _resetHint.add(null); // bump the Restart button
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
+      const SnackBar(content: Text("It's a draw - try again !")),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsController>();
@@ -69,6 +84,7 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
 
             state.playerWon.addListener(_playerWon);
             state.aiOpponentWon.addListener(_aiOpponentWon);
+            state.draw.addListener(_onDraw);
 
             return state;
           },
@@ -90,6 +106,7 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
                       );
 
                   return _ResponsivePlaySessionScreen(
+                    levelWidget: _LevelChip(number: widget.level.number),
                     playerName: TextSpan(
                       text: playerName,
                       style: textStyle,
@@ -167,7 +184,7 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
                               context.read<AudioController>();
                           audioController.playSfx(SfxType.buttonTap);
 
-                          GoRouter.of(context).push('/settings');
+                          context.pushNamed('settings'); // open settings
                         },
                         child: Tooltip(
                           message: 'Settings',
@@ -362,6 +379,9 @@ class _ResponsivePlaySessionScreen extends StatelessWidget {
 
   final TextSpan opponentName;
 
+  // dedicated level widget slot
+  final Widget levelWidget;
+
   /// How much bigger should the [mainBoardArea] be compared to the other
   /// elements.
   final double mainAreaProminence;
@@ -373,6 +393,8 @@ class _ResponsivePlaySessionScreen extends StatelessWidget {
     required this.restartButtonArea,
     required this.playerName,
     required this.opponentName,
+    required this.levelWidget,
+
     // ignore: unused_element
     this.mainAreaProminence = 0.8,
   });
@@ -442,7 +464,14 @@ class _ResponsivePlaySessionScreen extends StatelessWidget {
                             right: 15,
                             top: 5,
                           ),
-                          child: _buildVersusText(context, TextAlign.center),
+                          child: Column(
+                            children: [
+                              _buildVersusText(context, TextAlign.center),
+                              const SizedBox(height: 6),
+                              // 👉 level placed under names, never overlaps
+                              levelWidget,
+                            ],
+                          ),
                         ),
                       ),
                       SizedBox(
@@ -488,9 +517,10 @@ class _ResponsivePlaySessionScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         backButtonArea,
-                        Expanded(
-                          child: _buildVersusText(context, TextAlign.start),
-                        ),
+                        _buildVersusText(context, TextAlign.start),
+                        const SizedBox(height: 6),
+                        // 👉 level sits under the names on the left column
+                        levelWidget,
                       ],
                     ),
                   ),
@@ -531,6 +561,36 @@ class _ResponsivePlaySessionScreen extends StatelessWidget {
           );
         }
       },
+    );
+  }
+}
+
+class _LevelChip extends StatelessWidget {
+  final int number;
+  const _LevelChip({required this.number});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.watch<Palette>();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      decoration: BoxDecoration(
+        color: palette.backgroundPlaySession.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: palette.ink, width: 1.5),
+        boxShadow: const [
+          BoxShadow(blurRadius: 4, offset: Offset(0, 2), color: Colors.black26),
+        ],
+      ),
+      child: Text(
+        'Level $number',
+        style: TextStyle(
+          fontFamily: 'Permanent Marker',
+          fontSize: 18,
+          color: palette.ink,
+        ),
+      ),
     );
   }
 }

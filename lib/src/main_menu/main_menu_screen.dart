@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
+import 'package:tictactoe/src/ads/banner_ad_widget.dart';
 
 import '../audio/sounds.dart';
 import '../games_services/games_services.dart';
@@ -100,6 +102,13 @@ class MainMenuScreen extends StatelessWidget {
             _gap,
             const Text('Music by Mr Smith'),
             _gap,
+            Center(
+              child: BannerAdWidget(
+                fallbackSize: AdSize.banner, // 320x50 if adaptive not available
+                safeAreaPadding: const EdgeInsets.symmetric(
+                    horizontal: 16), // if your layout has padding
+              ),
+            ),
           ],
         ),
       ),
