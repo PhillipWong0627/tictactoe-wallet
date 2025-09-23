@@ -55,31 +55,31 @@ class SettingsScreen extends StatelessWidget {
                 onSelected: () => settings.toggleMusicOn(),
               ),
             ),
-            Consumer<InAppPurchaseController?>(
-                builder: (context, inAppPurchase, child) {
-              if (inAppPurchase == null) {
-                // In-app purchases are not supported yet.
-                return const SizedBox.shrink();
-              }
+            // Consumer<InAppPurchaseController?>(
+            //     builder: (context, inAppPurchase, child) {
+            //   if (inAppPurchase == null) {
+            //     // In-app purchases are not supported yet.
+            //     return const SizedBox.shrink();
+            //   }
 
-              Widget icon;
-              VoidCallback? callback;
-              if (inAppPurchase.adRemoval.active) {
-                icon = const Icon(Icons.check);
-              } else if (inAppPurchase.adRemoval.pending) {
-                icon = const CircularProgressIndicator();
-              } else {
-                icon = const Icon(Icons.ad_units);
-                callback = () {
-                  inAppPurchase.buy();
-                };
-              }
-              return _SettingsLine(
-                'Remove ads',
-                icon,
-                onSelected: callback,
-              );
-            }),
+            //   Widget icon;
+            //   VoidCallback? callback;
+            //   if (inAppPurchase.adRemoval.active) {
+            //     icon = const Icon(Icons.check);
+            //   } else if (inAppPurchase.adRemoval.pending) {
+            //     icon = const CircularProgressIndicator();
+            //   } else {
+            //     icon = const Icon(Icons.ad_units);
+            //     callback = () {
+            //       inAppPurchase.buy();
+            //     };
+            //   }
+            //   return _SettingsLine(
+            //     'Remove ads',
+            //     icon,
+            //     onSelected: callback,
+            //   );
+            // }),
             _SettingsLine(
               'Reset progress',
               const Icon(Icons.delete),

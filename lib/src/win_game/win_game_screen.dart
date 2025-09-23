@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
 
 import '../ads/ads_controller.dart';
@@ -21,8 +22,6 @@ class WinGameScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final adsControllerAvailable = context.watch<AdsController?>() != null;
-    final adsRemoved =
-        context.watch<InAppPurchaseController?>()?.adRemoval.active ?? false;
     final palette = context.watch<Palette>();
 
     const gap = SizedBox(height: 10);
@@ -33,10 +32,13 @@ class WinGameScreen extends StatelessWidget {
         squarishMainArea: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            if (adsControllerAvailable && !adsRemoved) ...[
+            if (adsControllerAvailable) ...[
               const Expanded(
                 child: Center(
-                  child: BannerAdWidget(),
+                  child: BannerAdWidget(
+                    useAdaptive: false,
+                    fallbackSize: AdSize.mediumRectangle,
+                  ),
                 ),
               ),
             ],
@@ -51,7 +53,8 @@ class WinGameScreen extends StatelessWidget {
             Center(
               child: Text(
                 'Score: ${score.score}\n'
-                'Time: ${score.formattedTime}',
+                'Time: ${score.formattedTime}\n'
+                'Difficulti: ${score.difficulty}',
                 style: const TextStyle(
                     fontFamily: 'Permanent Marker', fontSize: 20),
               ),

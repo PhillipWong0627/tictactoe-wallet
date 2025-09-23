@@ -33,7 +33,7 @@
        <!-- Google Mobile Ads -->
        <meta-data
            android:name="com.google.android.gms.ads.APPLICATION_ID"
-           android:value="ca-app-pub-2243055636922370~1473115180"/>
+           android:value="ca-app-pub-3457855080577194~8065351952"/>
        <!-- Google Play Games -->
        <meta-data
            android:name="com.google.android.gms.games.APP_ID"

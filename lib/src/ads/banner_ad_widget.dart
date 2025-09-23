@@ -141,6 +141,8 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
     //     _log.warning('Unable to get height of anchored banner.');
     //     size = AdSize.banner;
     //   } else {
+    //     _log.info('normal anchored banner.');
+
     //     size = adaptiveSize;
     //   }
     // } else {
@@ -162,6 +164,9 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
         _log.warning('Unable to get height of anchored adaptive banner. '
             'Falling back to ${widget.fallbackSize.width}x${widget.fallbackSize.height}.');
       } else {
+        _log.info(
+            'Falling back to ${widget.fallbackSize.width}x${widget.fallbackSize.height}.');
+
         size = adaptiveSize;
       }
     }

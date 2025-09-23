@@ -97,21 +97,10 @@ Future<void> main() async {
       ..initialize();
   }
 
-  InAppPurchaseController? inAppPurchaseController;
-  if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) {
-    inAppPurchaseController = InAppPurchaseController(InAppPurchase.instance)
-      // Subscribing to [InAppPurchase.instance.purchaseStream] as soon
-      // as possible in order not to miss any updates.
-      ..subscribe();
-    // Ask the store what the player has bought already.
-    inAppPurchaseController.restorePurchases();
-  }
-
   runApp(
     MyApp(
       settingsPersistence: LocalStorageSettingsPersistence(),
       playerProgressPersistence: LocalStoragePlayerProgressPersistence(),
-      inAppPurchaseController: inAppPurchaseController,
       adsController: adsController,
       gamesServicesController: gamesServicesController,
     ),
@@ -124,80 +113,63 @@ class MyApp extends StatelessWidget {
   static final _router = GoRouter(
     routes: [
       GoRoute(
-        name: 'home',
-        path: '/',
-        builder: (context, state) =>
-            const MainMenuScreen(key: Key('main menu')),
-        routes: [
-          GoRoute(
-            name: 'play',
-            path: 'play',
-            builder: (context, state) =>
-                const LevelSelectionScreen(key: Key('level selection')),
-            routes: [
-              GoRoute(
-                name: 'session',
-                path: 'session/:level',
-                pageBuilder: (context, state) {
-                  final levelNumber = int.parse(state.pathParameters['level']!);
-                  final level =
-                      gameLevels.singleWhere((e) => e.number == levelNumber);
-
-                  return CustomTransitionPage<void>(
-                    key: state.pageKey,
-                    child: PlaySessionScreen(level,
-                        key: const Key('play session')),
-                    transitionsBuilder: (context, animation, secondary, child) {
-                      // Incoming page slides from right; outgoing page slides slightly left.
-                      final inTween =
-                          Tween(begin: const Offset(1, 0), end: Offset.zero)
-                              .chain(CurveTween(curve: Curves.easeOutCubic));
-                      final outTween =
-                          Tween(begin: Offset.zero, end: const Offset(-0.05, 0))
-                              .chain(CurveTween(curve: Curves.easeOutCubic));
-
-                      return SlideTransition(
-                        position: animation.drive(inTween),
-                        child: SlideTransition(
-                          position: secondary.drive(outTween),
-                          child: child,
+          path: '/',
+          builder: (context, state) =>
+              const MainMenuScreen(key: Key('main menu')),
+          routes: [
+            GoRoute(
+                path: 'play',
+                pageBuilder: (context, state) => buildTransition<void>(
+                      child: const LevelSelectionScreen(
+                          key: Key('level selection')),
+                      color: context.watch<Palette>().backgroundLevelSelection,
+                    ),
+                routes: [
+                  GoRoute(
+                    path: 'session/:level',
+                    pageBuilder: (context, state) {
+                      final levelNumber =
+                          int.parse(state.pathParameters['level']!);
+                      final level = gameLevels
+                          .singleWhere((e) => e.number == levelNumber);
+                      return buildTransition<void>(
+                        child: PlaySessionScreen(
+                          level,
+                          key: const Key('play session'),
                         ),
+                        color: context.watch<Palette>().backgroundPlaySession,
+                        flipHorizontally: true,
                       );
                     },
-                    transitionDuration: const Duration(milliseconds: 300),
-                    reverseTransitionDuration:
-                        const Duration(milliseconds: 280),
-                  );
-                },
-              ),
-              GoRoute(
-                name: 'won',
-                path: 'won',
-                builder: (context, state) {
-                  final map = state.extra! as Map<String, dynamic>;
-                  final score = map['score'] as Score;
-                  return WinGameScreen(
-                      score: score, key: const Key('win game'));
-                },
-              ),
-            ],
-          ),
-          GoRoute(
-            name: 'settings',
-            path: 'settings',
-            pageBuilder: (context, state) => CustomTransitionPage<void>(
-              key: state.pageKey,
-              child: const SettingsScreen(key: Key('settings')),
-              transitionsBuilder:
-                  (context, animation, secondaryAnimation, child) {
-                return FadeTransition(opacity: animation, child: child);
+                  ),
+                  GoRoute(
+                    path: 'won',
+                    pageBuilder: (context, state) {
+                      final map = state.extra! as Map<String, dynamic>;
+                      final score = map['score'] as Score;
+
+                      return buildTransition<void>(
+                        child: WinGameScreen(
+                          score: score,
+                          key: const Key('win game'),
+                        ),
+                        color: context.watch<Palette>().backgroundPlaySession,
+                        flipHorizontally: true,
+                      );
+                    },
+                  )
+                ]),
+            GoRoute(
+              path: 'settings',
+              pageBuilder: (context, state) {
+                return buildTransition<void>(
+                  color: context.watch<Palette>().backgroundPlaySession,
+                  flipHorizontally: true,
+                  child: const SettingsScreen(key: Key('settings')),
+                );
               },
-              transitionDuration: const Duration(milliseconds: 220),
-              reverseTransitionDuration: const Duration(milliseconds: 180),
             ),
-          ),
-        ],
-      ),
+          ]),
     ],
   );
 
@@ -207,14 +179,11 @@ class MyApp extends StatelessWidget {
 
   final GamesServicesController? gamesServicesController;
 
-  final InAppPurchaseController? inAppPurchaseController;
-
   final AdsController? adsController;
 
   const MyApp({
     required this.playerProgressPersistence,
     required this.settingsPersistence,
-    required this.inAppPurchaseController,
     required this.adsController,
     required this.gamesServicesController,
     super.key,
@@ -235,8 +204,6 @@ class MyApp extends StatelessWidget {
           Provider<GamesServicesController?>.value(
               value: gamesServicesController),
           Provider<AdsController?>.value(value: adsController),
-          ChangeNotifierProvider<InAppPurchaseController?>.value(
-              value: inAppPurchaseController),
           Provider<SettingsController>(
             lazy: false,
             create: (context) => SettingsController(

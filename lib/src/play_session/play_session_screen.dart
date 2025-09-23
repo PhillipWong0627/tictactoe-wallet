@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:logging/logging.dart' hide Level;
 import 'package:provider/provider.dart';
+import 'package:tictactoe/src/ads/banner_ad_widget.dart';
 
 import '../ads/ads_controller.dart';
 import '../ai/ai_opponent.dart';
@@ -94,6 +96,11 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
         ignoring: _duringCelebration,
         child: Scaffold(
           backgroundColor: palette.backgroundPlaySession,
+          bottomNavigationBar: BannerAdWidget(
+            fallbackSize: AdSize.banner, // 320x50 if adaptive not available
+            safeAreaPadding: EdgeInsets.symmetric(
+                horizontal: 16), // if your layout has padding
+          ),
           body: Stack(
             children: [
               ValueListenableBuilder<String>(
@@ -183,8 +190,7 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
                           final audioController =
                               context.read<AudioController>();
                           audioController.playSfx(SfxType.buttonTap);
-
-                          context.pushNamed('settings'); // open settings
+                          context.push('/settings'); // open settings
                         },
                         child: Tooltip(
                           message: 'Settings',
@@ -222,12 +228,6 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
     _startOfPlay = DateTime.now();
 
     // Preload ad for the win screen.
-    final adsRemoved =
-        context.read<InAppPurchaseController?>()?.adRemoval.active ?? false;
-    if (!adsRemoved) {
-      final adsController = context.read<AdsController?>();
-      adsController?.preloadAd();
-    }
   }
 
   void _aiOpponentWon() {
