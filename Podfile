@@ -76,8 +76,8 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 flutter_ios_podfile_setup
 
 target 'Runner' do
-  use_frameworks! :linkage => :static   # ✅ frameworks (static) = good
-  # ❌ do NOT use: use_modular_headers!
+  use_frameworks! :linkage => :static
+  # DO NOT use: use_modular_headers!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 
@@ -91,7 +91,7 @@ post_install do |installer|
     t.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
     end
-    # ✅ This is critical—adds the Flutter module settings to every pod target
     flutter_additional_ios_build_settings(t)
   end
 end
+
