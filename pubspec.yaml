@@ -12,19 +12,33 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
+  # a
   audioplayers: ^6.5.1
-  cupertino_icons: ^1.0.2
-  go_router: ^16.2.2
-  logging: ^1.1.0
-  provider: ^6.0.2
-  shared_preferences: ^2.4.0
 
+  # c
+  cupertino_icons: ^1.0.2
+
+  # f
   firebase_core: ^4.1.0  # Needed for Crashlytics below
   firebase_crashlytics: ^5.0.0  # Error reporting
+  
+  # g
+  go_router: ^16.2.2
   games_services: ^4.0.0  # Achievements and leaderboards
   google_mobile_ads: ^6.0.0  # Ads
+  
+  # i
   in_app_purchase: ^3.0.1  # In-app purchases
+  
+  # l
+  logging: ^1.1.0
+
+  # p
+  provider: ^6.0.2
+
+  # s
+  shared_preferences: ^2.4.0
+
 
 dev_dependencies:
   flutter_test:
