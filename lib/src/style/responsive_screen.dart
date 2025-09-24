@@ -30,20 +30,23 @@ class ResponsiveScreen extends StatelessWidget {
       builder: (context, constraints) {
         // This widget wants to fill the whole screen.
         final size = constraints.biggest;
-        final padding = EdgeInsets.all(size.shortestSide / 30);
+        final padding = EdgeInsets.fromLTRB(
+            size.shortestSide / 10,
+            size.shortestSide / 20,
+            size.shortestSide / 10,
+            size.shortestSide / 10);
 
         if (size.height >= size.width) {
           // "Portrait" / "mobile" mode.
           return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: padding,
-                  child: topMessageArea,
-                ),
-              ),
+              // SafeArea(
+              //   bottom: false,
+              //   child: Padding(
+              //     padding: padding,
+              //     child: topMessageArea,
+              //   ),
+              // ),
               Expanded(
                 flex: (mainAreaProminence * 100).round(),
                 child: SafeArea(

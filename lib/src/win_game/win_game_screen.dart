@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -11,7 +13,7 @@ import '../style/palette.dart';
 import '../style/responsive_screen.dart';
 import '../style/rough/button.dart';
 
-class WinGameScreen extends StatelessWidget {
+class WinGameScreen extends StatefulWidget {
   final Score score;
 
   const WinGameScreen({
@@ -20,11 +22,19 @@ class WinGameScreen extends StatelessWidget {
   });
 
   @override
+  State<WinGameScreen> createState() => _WinGameScreenState();
+}
+
+class _WinGameScreenState extends State<WinGameScreen> {
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final adsControllerAvailable = context.watch<AdsController?>() != null;
     final palette = context.watch<Palette>();
-
-    const gap = SizedBox(height: 10);
 
     return Scaffold(
       backgroundColor: palette.backgroundPlaySession,
@@ -32,38 +42,48 @@ class WinGameScreen extends StatelessWidget {
         squarishMainArea: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            if (adsControllerAvailable) ...[
-              const Expanded(
-                child: Center(
-                  child: BannerAdWidget(
-                    useAdaptive: false,
-                    fallbackSize: AdSize.mediumRectangle,
-                  ),
+            if (adsControllerAvailable)
+              Center(
+                child: BannerAdWidget(
+                  useAdaptive: false,
+                  fallbackSize: AdSize.mediumRectangle,
                 ),
               ),
-            ],
-            gap,
+            const SizedBox(height: 15),
             const Center(
               child: Text(
                 'You won!',
-                style: TextStyle(fontFamily: 'Permanent Marker', fontSize: 50),
+                style: TextStyle(
+                  fontFamily: 'Permanent Marker',
+                  fontSize: 50,
+                ),
               ),
             ),
-            gap,
             Center(
               child: Text(
-                'Score: ${score.score}\n'
-                'Time: ${score.formattedTime}\n'
-                'Difficulti: ${score.difficulty}',
+                'Score: ${widget.score.score}\n'
+                'Time: ${widget.score.formattedTime}\n'
+                'Difficulty: ${widget.score.difficulty}',
                 style: const TextStyle(
-                    fontFamily: 'Permanent Marker', fontSize: 20),
+                  fontFamily: 'Permanent Marker',
+                  fontSize: 20,
+                ),
+                textAlign: TextAlign.center,
               ),
             ),
           ],
         ),
         rectangularMenuArea: RoughButton(
           onTap: () {
-            GoRouter.of(context).pop();
+            final ads = context.read<AdsController?>();
+            if (ads == null) {
+              GoRouter.of(context).pop(); // no ads controller, just continue
+            } else {
+              // Load + show; when the ad closes (or fails), pop.
+              ads.loadInterstitialAd(onClose: () {
+                GoRouter.of(context).pop();
+              });
+            }
           },
           textColor: palette.ink,
           child: const Text('Continue'),

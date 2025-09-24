@@ -24,7 +24,7 @@ class MainMenuScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: palette.redPen,
       body: ResponsiveScreen(
-        mainAreaProminence: 0.45,
+        // mainAreaProminence: 0.45,
         squarishMainArea: DelayedAppear(
           ms: 1000,
           child: Center(

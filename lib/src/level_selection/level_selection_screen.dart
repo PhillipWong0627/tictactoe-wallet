@@ -21,10 +21,11 @@ class LevelSelectionScreen extends StatelessWidget {
       body: ResponsiveScreen(
         squarishMainArea: Column(
           children: [
+            const SizedBox(height: 50),
             DelayedAppear(
               ms: ScreenDelays.first,
               child: const Padding(
-                padding: EdgeInsets.all(16),
+                padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
                 child: Center(
                   child: Text(
                     'Select level',

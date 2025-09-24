@@ -1,4 +1,8 @@
+import 'dart:developer';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import 'preloaded_banner_ad.dart';
@@ -9,6 +13,63 @@ class AdsController {
 
   PreloadedBannerAd? _preloadedAd;
 
+  //Interstitial
+  InterstitialAd? interstitialAd;
+  bool isInterstitialAdReady = false;
+
+  static Future<InitializationStatus> initMobileAds() {
+    return MobileAds.instance.initialize();
+  }
+
+  void loadInterstitialAd({VoidCallback? onClose}) {
+    InterstitialAd.load(
+      adUnitId:
+          //  kDebugMode
+          //     ?
+          'ca-app-pub-3940256099942544/1033173712'
+      // : Platform.isAndroid
+      //     ? 'ca-app-pub-3457855080577194/3176397441'
+      //     : 'ca-app-pub-3457855080577194/5400054345',
+      ,
+      request: const AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (ad) {
+          interstitialAd = ad;
+          isInterstitialAdReady = true;
+
+          ad.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (adsDismissed) {
+              adsDismissed.dispose();
+              isInterstitialAdReady = false;
+              onClose?.call();
+            },
+            onAdFailedToShowFullScreenContent: (adFailed, error) {
+              adFailed.dispose();
+              interstitialAd = null;
+              isInterstitialAdReady = false;
+              onClose?.call();
+            },
+          );
+
+          showInterstitialAd();
+        },
+        onAdFailedToLoad: (loadError) {
+          log('InterstitialAd failed to load: $loadError');
+          isInterstitialAdReady = false;
+          interstitialAd?.dispose();
+          interstitialAd = null;
+          onClose?.call(); // <-- keep UX flowing if load fails
+        },
+      ),
+    );
+  }
+
+  void showInterstitialAd() {
+    if (isInterstitialAdReady && interstitialAd != null) {
+      interstitialAd?.show();
+    }
+  }
+
   /// Creates an [AdsController] that wraps around a [MobileAds] [instance].
   ///
   /// Example usage:
@@ -17,6 +78,7 @@ class AdsController {
   AdsController(MobileAds instance) : _instance = instance;
 
   void dispose() {
+    interstitialAd?.dispose();
     _preloadedAd?.dispose();
   }
 

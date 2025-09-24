@@ -96,10 +96,10 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
         ignoring: _duringCelebration,
         child: Scaffold(
           backgroundColor: palette.backgroundPlaySession,
-          bottomNavigationBar: BannerAdWidget(
-            fallbackSize: AdSize.banner, // 320x50 if adaptive not available
-            safeAreaPadding: EdgeInsets.symmetric(
-                horizontal: 16), // if your layout has padding
+          bottomNavigationBar: SafeArea(
+            child: BannerAdWidget(
+              fallbackSize: AdSize.banner, // 320x50 if adaptive not available
+            ),
           ),
           body: Stack(
             children: [
