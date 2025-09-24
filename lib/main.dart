@@ -88,19 +88,19 @@ Future<void> main() async {
     adsController.initialize();
   }
 
-  GamesServicesController? gamesServicesController;
-  if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) {
-    gamesServicesController = GamesServicesController()
-      // Attempt to log the player in.
-      ..initialize();
-  }
+  // GamesServicesController? gamesServicesController;
+  // if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) {
+  //   gamesServicesController = GamesServicesController()
+  //     // Attempt to log the player in.
+  //     ..initialize();
+  // }
 
   runApp(
     MyApp(
       settingsPersistence: LocalStorageSettingsPersistence(),
       playerProgressPersistence: LocalStoragePlayerProgressPersistence(),
       adsController: adsController,
-      gamesServicesController: gamesServicesController,
+      // gamesServicesController: gamesServicesController,
     ),
   );
 }
@@ -175,7 +175,7 @@ class MyApp extends StatelessWidget {
 
   final SettingsPersistence settingsPersistence;
 
-  final GamesServicesController? gamesServicesController;
+  // final GamesServicesController? gamesServicesController;
 
   final AdsController? adsController;
 
@@ -183,7 +183,7 @@ class MyApp extends StatelessWidget {
     required this.playerProgressPersistence,
     required this.settingsPersistence,
     required this.adsController,
-    required this.gamesServicesController,
+    // required this.gamesServicesController,
     super.key,
   });
 
@@ -199,8 +199,8 @@ class MyApp extends StatelessWidget {
               return progress;
             },
           ),
-          Provider<GamesServicesController?>.value(
-              value: gamesServicesController),
+          // Provider<GamesServicesController?>.value(
+          //     value: gamesServicesController),
           Provider<AdsController?>.value(value: adsController),
           Provider<SettingsController>(
             lazy: false,

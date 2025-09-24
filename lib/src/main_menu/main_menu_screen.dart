@@ -51,30 +51,30 @@ class MainMenuScreen extends StatelessWidget {
                 child: const Text('Play'),
               ),
             ),
-            if (gamesServicesController != null) ...[
-              _hideUntilReady(
-                ready: gamesServicesController.signedIn,
-                // TODO: show an "active" animation on the button
-                child: DelayedAppear(
-                  ms: 600,
-                  child: RoughButton(
-                    onTap: () => gamesServicesController.showAchievements(),
-                    child: const Text('Achievements'),
-                  ),
-                ),
-              ),
-              _hideUntilReady(
-                // TODO: show an "active" animation on the button
-                ready: gamesServicesController.signedIn,
-                child: DelayedAppear(
-                  ms: 400,
-                  child: RoughButton(
-                    onTap: () => gamesServicesController.showLeaderboard(),
-                    child: const Text('Leaderboard'),
-                  ),
-                ),
-              ),
-            ],
+            // if (gamesServicesController != null) ...[
+            //   _hideUntilReady(
+            //     ready: gamesServicesController.signedIn,
+            //     // TODO: show an "active" animation on the button
+            //     child: DelayedAppear(
+            //       ms: 600,
+            //       child: RoughButton(
+            //         onTap: () => gamesServicesController.showAchievements(),
+            //         child: const Text('Achievements'),
+            //       ),
+            //     ),
+            //   ),
+            //   _hideUntilReady(
+            //     // TODO: show an "active" animation on the button
+            //     ready: gamesServicesController.signedIn,
+            //     child: DelayedAppear(
+            //       ms: 400,
+            //       child: RoughButton(
+            //         onTap: () => gamesServicesController.showLeaderboard(),
+            //         child: const Text('Leaderboard'),
+            //       ),
+            //     ),
+            //   ),
+            // ],
             DelayedAppear(
               ms: 200,
               child: RoughButton(

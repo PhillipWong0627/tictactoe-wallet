@@ -10,7 +10,7 @@ void main() {
       settingsPersistence: MemoryOnlySettingsPersistence(),
       playerProgressPersistence: MemoryOnlyPlayerProgressPersistence(),
       adsController: null,
-      gamesServicesController: null,
+      // gamesServicesController: null,
     ));
 
     // Verify that the 'Play' button is shown.

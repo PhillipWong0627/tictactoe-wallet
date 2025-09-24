@@ -6,18 +6,32 @@ import 'package:tictactoe/src/audio/audio_controller.dart';
 import 'package:tictactoe/src/audio/sounds.dart';
 import 'package:tictactoe/src/style/palette.dart';
 
-class RoughButton extends StatelessWidget {
+class RoughButton extends StatefulWidget {
   final Widget child;
-
   final VoidCallback? onTap;
-
   final Color? textColor;
-
   final bool drawRectangle;
-
   final double fontSize;
-
   final SfxType soundEffect;
+
+  /// NEW: Disable the button externally (e.g., when ad is loading).
+  final bool disabled;
+
+  /// NEW: Show a small progress indicator when [disabled] is true.
+  final bool showBusyWhenDisabled;
+
+  /// NEW: Slight scale-down on press.
+  final double pressedScale;
+
+  /// NEW: Animation duration for the press animation.
+  final Duration pressAnimDuration;
+
+  /// NEW: Prevents same-frame double taps. If true, the button locks itself
+  /// for [tapLockDuration] after a successful tap.
+  final bool lockOnTap;
+
+  /// NEW: How long the internal tap lock should last.
+  final Duration tapLockDuration;
 
   const RoughButton({
     super.key,
@@ -27,137 +41,131 @@ class RoughButton extends StatelessWidget {
     this.fontSize = 32,
     this.drawRectangle = false,
     this.soundEffect = SfxType.buttonTap,
+
+    // new defaults
+    this.disabled = false,
+    this.showBusyWhenDisabled = false,
+    this.pressedScale = 0.96,
+    this.pressAnimDuration = const Duration(milliseconds: 140),
+    this.lockOnTap = true,
+    this.tapLockDuration = const Duration(milliseconds: 500),
   });
 
-  void _handleTap(BuildContext context) {
-    assert(onTap != null, "Don't call _handleTap when onTap is null");
-
-    final audioController = context.read<AudioController>();
-    audioController.playSfx(soundEffect);
-
-    onTap!();
-  }
-
   @override
-  Widget build(BuildContext context) {
-    final palette = context.watch<Palette>();
-
-    return InkResponse(
-      onTap: onTap == null ? null : () => _handleTap(context),
-      child: Stack(
-        alignment: AlignmentDirectional.center,
-        children: [
-          if (drawRectangle)
-            Image.asset(
-              'assets/images/bar.png',
-            ),
-          DefaultTextStyle(
-            style: TextStyle(
-              fontFamily: 'Permanent Marker',
-              fontSize: fontSize,
-              color: onTap != null ? textColor : palette.ink,
-            ),
-            child: child,
-          ),
-        ],
-      ),
-    );
-  }
+  State<RoughButton> createState() => _RoughButtonState();
 }
 
-class _RoughBox extends StatefulWidget {
-  final ImageProvider image = const AssetImage('assets/images/box.png');
-
-  const _RoughBox();
-
-  @override
-  State<_RoughBox> createState() => _RoughBoxState();
-}
-
-class _RoughBoxState extends State<_RoughBox> {
-  ImageStream? _imageStream;
-  ImageInfo? _imageInfo;
+class _RoughButtonState extends State<RoughButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+  bool _locked = false;
 
   @override
-  Widget build(BuildContext context) {
-    ui.Image? img = _imageInfo?.image;
-    if (img == null) {
-      return const SizedBox();
-    }
-    // int w = img.width;
-    // int frame = widget.frame;
-    // int frameW = widget.frameWidth;
-    // int frameH = widget.frameHeight;
-    // int cols = (w / frameW).floor();
-    // int col = frame % cols;
-    // int row = (frame / cols).floor();
-    // ui.Rect rect = ui.Rect.fromLTWH(
-    //     col * frameW * 1.0, row * frameH * 1.0, frameW * 1.0, frameH * 1.0);
-    return CustomPaint(painter: _RoughBoxPainter(img));
+  void initState() {
+    super.initState();
+    _controller =
+        AnimationController(vsync: this, duration: widget.pressAnimDuration);
+    _scale = Tween<double>(begin: 1.0, end: widget.pressedScale)
+        .animate(_controller);
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _getImage();
-  }
-
-  @override
-  void didUpdateWidget(_RoughBox oldWidget) {
+  void didUpdateWidget(covariant RoughButton oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.image != oldWidget.image) {
-      _getImage();
+    if (oldWidget.pressAnimDuration != widget.pressAnimDuration) {
+      _controller.duration = widget.pressAnimDuration;
     }
   }
 
   @override
   void dispose() {
-    _imageStream?.removeListener(ImageStreamListener(_updateImage));
+    _controller.dispose();
     super.dispose();
   }
 
-  @override
-  void initState() {
-    super.initState();
+  bool get _enabled {
+    // enabled only if: has onTap AND not externally disabled AND not locally locked
+    return widget.onTap != null && !widget.disabled && !_locked;
   }
 
-  void _getImage() {
-    final ImageStream? oldImageStream = _imageStream;
-    _imageStream = widget.image.resolve(createLocalImageConfiguration(context));
-    if (_imageStream!.key == oldImageStream?.key) {
-      return;
+  void _animateDown() {
+    if (_enabled) _controller.forward();
+  }
+
+  void _animateUp() {
+    _controller.reverse();
+  }
+
+  void _handleTap() {
+    if (!_enabled) return;
+
+    // local lock to kill same-frame double taps
+    if (widget.lockOnTap) {
+      setState(() => _locked = true);
+      Future.delayed(widget.tapLockDuration, () {
+        if (!mounted) return;
+        setState(() => _locked = false);
+      });
     }
-    final ImageStreamListener listener = ImageStreamListener(_updateImage);
-    oldImageStream?.removeListener(listener);
-    _imageStream!.addListener(listener);
+
+    // play sfx
+    final audioController = context.read<AudioController>();
+    audioController.playSfx(widget.soundEffect);
+
+    // call user handler
+    widget.onTap!.call();
   }
-
-  void _updateImage(ImageInfo imageInfo, bool synchronousCall) {
-    setState(() {
-      _imageInfo = imageInfo;
-    });
-  }
-}
-
-class _RoughBoxPainter extends CustomPainter {
-  ui.Image image;
-
-  _RoughBoxPainter(this.image);
 
   @override
-  void paint(Canvas canvas, Size size) {
-    paintImage(
-      canvas: canvas,
-      rect: Rect.fromLTWH(0, 0, size.width, size.height),
-      image: image,
-      centerSlice: const Rect.fromLTRB(5, 5, 5, 5),
-      fit: BoxFit.fitWidth,
+  Widget build(BuildContext context) {
+    final palette = context.watch<Palette>();
+    final baseColor = widget.textColor ?? palette.ink;
+
+    final effectiveEnabled = _enabled;
+    final textColor = effectiveEnabled
+        ? baseColor
+        : baseColor.withOpacity(0.55); // dim when disabled/locked
+
+    return GestureDetector(
+      onTapDown: (_) => _animateDown(),
+      onTapCancel: () => _animateUp(),
+      onTapUp: (_) => _animateUp(),
+      onTap: _handleTap,
+      behavior: HitTestBehavior.translucent,
+      child: Stack(
+        alignment: AlignmentDirectional.center,
+        children: [
+          ScaleTransition(
+            scale: _scale,
+            child: Stack(
+              alignment: AlignmentDirectional.center,
+              children: [
+                if (widget.drawRectangle) Image.asset('assets/images/bar.png'),
+                DefaultTextStyle(
+                  style: TextStyle(
+                    fontFamily: 'Permanent Marker',
+                    fontSize: widget.fontSize,
+                    color: textColor,
+                  ),
+                  child: widget.child,
+                ),
+              ],
+            ),
+          ),
+
+          // Optional busy indicator when disabled/busy
+          if (widget.showBusyWhenDisabled && (widget.disabled || _locked))
+            const Positioned(
+              right: 12,
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+        ],
+      ),
     );
-    // canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), Paint());
-  }
-
-  @override
-  bool shouldRepaint(_RoughBoxPainter oldDelegate) {
-    return oldDelegate.image != image;
   }
 }

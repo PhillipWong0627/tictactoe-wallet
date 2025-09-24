@@ -16,12 +16,18 @@ class AdsController {
   //Interstitial
   InterstitialAd? interstitialAd;
   bool isInterstitialAdReady = false;
+  // Spam guard
+  bool _busy = false;
+  bool get isAdBusy => _busy;
 
   static Future<InitializationStatus> initMobileAds() {
     return MobileAds.instance.initialize();
   }
 
   void loadInterstitialAd({VoidCallback? onClose}) {
+    if (_busy) return; // hard guard against spam
+    _busy = true;
+
     InterstitialAd.load(
       adUnitId:
           //  kDebugMode
@@ -40,14 +46,22 @@ class AdsController {
           ad.fullScreenContentCallback = FullScreenContentCallback(
             onAdDismissedFullScreenContent: (adsDismissed) {
               adsDismissed.dispose();
+              interstitialAd = null;
+
               isInterstitialAdReady = false;
-              onClose?.call();
+              _busy = false;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                onClose?.call();
+              });
             },
             onAdFailedToShowFullScreenContent: (adFailed, error) {
               adFailed.dispose();
               interstitialAd = null;
               isInterstitialAdReady = false;
-              onClose?.call();
+              _busy = false;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                onClose?.call();
+              });
             },
           );
 
@@ -58,7 +72,10 @@ class AdsController {
           isInterstitialAdReady = false;
           interstitialAd?.dispose();
           interstitialAd = null;
-          onClose?.call(); // <-- keep UX flowing if load fails
+          _busy = false;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            onClose?.call();
+          });
         },
       ),
     );
@@ -67,6 +84,8 @@ class AdsController {
   void showInterstitialAd() {
     if (isInterstitialAdReady && interstitialAd != null) {
       interstitialAd?.show();
+    } else {
+      _busy = false;
     }
   }
 

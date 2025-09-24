@@ -32,6 +32,8 @@ class _WinGameScreenState extends State<WinGameScreen> {
   Widget build(BuildContext context) {
     final adsControllerAvailable = context.watch<AdsController?>() != null;
     final palette = context.watch<Palette>();
+    final ads = context.watch<AdsController?>();
+    final adBusy = ads?.isAdBusy ?? false;
 
     return Scaffold(
       backgroundColor: palette.backgroundPlaySession,
@@ -72,16 +74,22 @@ class _WinGameScreenState extends State<WinGameScreen> {
         ),
         rectangularMenuArea: RoughButton(
           onTap: () {
-            final ads = context.read<AdsController?>();
-            if (ads == null) {
+            final controller = context.read<AdsController?>();
+
+            if (controller == null) {
               GoRouter.of(context).pop(); // no ads controller, just continue
+              return;
             } else {
               // Load + show; when the ad closes (or fails), pop.
-              ads.loadInterstitialAd(onClose: () {
+              controller.loadInterstitialAd(onClose: () {
+                if (!context.mounted) return;
                 GoRouter.of(context).pop();
               });
             }
           },
+          disabled: adBusy, // blocks taps while ad is loading/showing
+          showBusyWhenDisabled: true, // tiny spinner at the right
+
           textColor: palette.ink,
           child: const Text('Continue'),
         ),
