@@ -9,10 +9,10 @@ import 'package:go_router/go_router.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
+import 'package:tictactoe/src/app_lifecycle/app_lifecycle_observer.dart';
 
 import 'firebase_options.dart';
 import 'src/ads/ads_controller.dart';
-import 'src/app_lifecycle/app_lifecycle.dart';
 import 'src/audio/audio_controller.dart';
 import 'src/crashlytics/crashlytics.dart';
 import 'src/games_services/games_services.dart';
@@ -33,11 +33,15 @@ import 'src/style/palette.dart';
 import 'src/style/snack_bar.dart';
 import 'src/win_game/win_game_screen.dart';
 
+final Logger _log = Logger('main.dart');
+
 Future<void> main() async {
+  // 1) Make sure plugins, SystemChrome, etc. are safe to call.
+  WidgetsFlutterBinding.ensureInitialized();
+
   FirebaseCrashlytics? crashlytics;
   if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) {
     try {
-      WidgetsFlutterBinding.ensureInitialized();
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
@@ -75,7 +79,7 @@ Future<void> main() async {
   });
 
   _log.info('Going full screen');
-  SystemChrome.setEnabledSystemUIMode(
+  await SystemChrome.setEnabledSystemUIMode(
     SystemUiMode.edgeToEdge,
   );
 
@@ -84,8 +88,8 @@ Future<void> main() async {
     /// Prepare the google_mobile_ads plugin so that the first ad loads
     /// faster. This can be done later or with a delay if startup
     /// experience suffers.
-    adsController = AdsController(MobileAds.instance);
-    adsController.initialize();
+    await MobileAds.instance.initialize();
+    adsController = AdsController(MobileAds.instance)..initialize();
   }
 
   // GamesServicesController? gamesServicesController;
@@ -105,9 +109,19 @@ Future<void> main() async {
   );
 }
 
-Logger _log = Logger('main.dart');
-
 class MyApp extends StatelessWidget {
+  const MyApp({
+    super.key,
+    required this.playerProgressPersistence,
+    required this.settingsPersistence,
+    required this.adsController,
+  });
+
+  final PlayerProgressPersistence playerProgressPersistence;
+  final SettingsPersistence settingsPersistence;
+  final AdsController? adsController;
+
+  // Define Routes Here
   static final _router = GoRouter(
     routes: [
       GoRoute(
@@ -171,25 +185,9 @@ class MyApp extends StatelessWidget {
     ],
   );
 
-  final PlayerProgressPersistence playerProgressPersistence;
-
-  final SettingsPersistence settingsPersistence;
-
-  // final GamesServicesController? gamesServicesController;
-
-  final AdsController? adsController;
-
-  const MyApp({
-    required this.playerProgressPersistence,
-    required this.settingsPersistence,
-    required this.adsController,
-    // required this.gamesServicesController,
-    super.key,
-  });
-
   @override
   Widget build(BuildContext context) {
-    return AppLifecycleObserver(
+    return _LifecycleHost(
       child: MultiProvider(
         providers: [
           ChangeNotifierProvider(
@@ -252,4 +250,64 @@ class MyApp extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Hosts and provides a ValueNotifier<AppLifecycleState> to the tree,
+/// so AudioController (and others) can react to lifecycle changes.
+/// This wraps your new AppLifecycleObserver class/file.
+class _LifecycleHost extends StatefulWidget {
+  const _LifecycleHost({required this.child});
+  final Widget child;
+
+  @override
+  State<_LifecycleHost> createState() => _LifecycleHostState();
+}
+
+class _LifecycleHostState extends State<_LifecycleHost> {
+  // What AudioController expects via ProxyProvider2
+  final ValueNotifier<AppLifecycleState> _lifecycle =
+      ValueNotifier<AppLifecycleState>(AppLifecycleState.resumed);
+
+  late final AppLifecycleObserver _observer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Bridge: forward observer events into the ValueNotifier the app already uses
+    _observer = AppLifecycleObserver(
+      _Hooks(
+        onState: (s) => _lifecycle.value = s,
+      ),
+    )..attach();
+  }
+
+  @override
+  void dispose() {
+    _observer.detach();
+    _lifecycle.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Expose the ValueNotifier to the subtree (for ProxyProvider2 → AudioController)
+    return ListenableProvider<ValueNotifier<AppLifecycleState>>.value(
+      value: _lifecycle,
+      child: widget.child,
+    );
+  }
+}
+
+class _Hooks extends AppLifecycleHooks {
+  _Hooks({required this.onState});
+  final void Function(AppLifecycleState) onState;
+
+  @override
+  void onResume() => onState(AppLifecycleState.resumed);
+  @override
+  void onPause() => onState(AppLifecycleState.paused);
+  @override
+  void onInactive() => onState(AppLifecycleState.inactive);
+  @override
+  void onDetach() => onState(AppLifecycleState.detached);
 }
