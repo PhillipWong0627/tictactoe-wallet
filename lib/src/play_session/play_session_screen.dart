@@ -8,14 +8,12 @@ import 'package:logging/logging.dart' hide Level;
 import 'package:provider/provider.dart';
 import 'package:tictactoe/src/ads/banner_ad_widget.dart';
 
-import '../ads/ads_controller.dart';
 import '../ai/ai_opponent.dart';
 import '../audio/audio_controller.dart';
 import '../audio/sounds.dart';
 import '../game_internals/board_state.dart';
 import '../games_services/games_services.dart';
 import '../games_services/score.dart';
-import '../in_app_purchase/in_app_purchase.dart';
 import '../level_selection/levels.dart';
 import '../player_progress/player_progress.dart';
 import '../settings/custom_name_dialog.dart';
