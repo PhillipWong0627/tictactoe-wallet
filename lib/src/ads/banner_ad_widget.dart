@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
+import 'package:tictactoe/src/ads/ad_ids.dart';
 
 import 'ads_controller.dart';
 import 'preloaded_banner_ad.dart';
@@ -180,9 +181,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
       // https://developers.google.com/admob/android/test-ads. When ready,
       // you replace this with your own, production ad unit ID,
       // created in https://apps.admob.com/.
-      adUnitId: Theme.of(context).platform == TargetPlatform.android
-          ? 'ca-app-pub-3457855080577194/9115953980'
-          : 'ca-app-pub-3457855080577194/7200237080',
+      adUnitId: AdIds.banner(),
       size: size,
       request: const AdRequest(),
       listener: BannerAdListener(
