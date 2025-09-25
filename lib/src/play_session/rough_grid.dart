@@ -49,7 +49,7 @@ class RoughGrid extends StatelessWidget {
                   end: const Alignment(0.1, 1),
                   colors: [
                     Colors.black,
-                    Colors.white.withOpacity(0),
+                    Colors.white.withValues(alpha: 0),
                   ],
                   stops: [
                     progress,
@@ -89,7 +89,7 @@ class RoughGrid extends StatelessWidget {
                   end: const Alignment(1, 0.1),
                   colors: [
                     Colors.black,
-                    Colors.white.withOpacity(0),
+                    Colors.white.withValues(alpha: 0),
                   ],
                   stops: [
                     progress,

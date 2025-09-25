@@ -202,7 +202,7 @@ class _SketchedX extends StatelessWidget {
                     end: Alignment.bottomRight,
                     colors: [
                       Colors.black,
-                      Colors.white.withOpacity(0),
+                      Colors.white.withValues(alpha: 0),
                     ],
                     stops: [
                       progress.value * 2,
@@ -226,7 +226,7 @@ class _SketchedX extends StatelessWidget {
                     end: Alignment.bottomLeft,
                     colors: [
                       Colors.black,
-                      Colors.white.withOpacity(0),
+                      Colors.white.withValues(alpha: 0),
                     ],
                     stops: [
                       -1 + progress.value * 2,
@@ -294,7 +294,7 @@ class _SketchedO extends StatelessWidget {
                   transform: const GradientRotation(-110 / 180 * math.pi),
                   colors: [
                     Colors.black,
-                    Colors.white.withOpacity(0),
+                    Colors.white.withValues(alpha: 0),
                   ],
                   stops: [
                     progress.value,
