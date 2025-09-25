@@ -125,7 +125,7 @@ class _RoughButtonState extends State<RoughButton>
     final effectiveEnabled = _enabled;
     final textColor = effectiveEnabled
         ? baseColor
-        : baseColor.withOpacity(0.55); // dim when disabled/locked
+        : baseColor.withValues(alpha: 0.55); // dim when disabled/locked
 
     return GestureDetector(
       onTapDown: (_) => _animateDown(),
