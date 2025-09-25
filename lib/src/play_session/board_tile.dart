@@ -38,22 +38,47 @@ class BoardTile extends StatelessWidget {
       builder: (context, constraints) {
         final size =
             constraints.biggest.shortestSide * 0.65; // coin size % of cell
-        return InkResponse(
-          onTap: (!isLocked && canTake)
-              ? () => context.read<BoardState>().take(tile)
-              : null,
-          child: Center(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 160),
-              transitionBuilder: (w, anim) => ScaleTransition(
-                scale: CurvedAnimation(parent: anim, curve: Curves.easeOutBack),
-                child: w,
-              ),
-              child: SizedBox(
-                key: ValueKey(side), // animate only when side changes
-                width: size,
-                height: size,
-                child: FittedBox(child: piece),
+        final side = context.select<BoardState, Side>((s) => s.whoIsAt(tile));
+        final label = 'Cell (${tile.x + 1}, ${tile.y + 1})';
+        final value = switch (side) {
+          Side.x => 'Player coin',
+          Side.o => 'Opponent coin',
+          Side.none => 'Empty',
+        };
+        final canTap = !isLocked && canTake;
+
+        return Semantics(
+          label: label,
+          value: value,
+          button: canTap,
+          enabled: canTap,
+          onTapHint: canTap ? 'Place your coin' : null,
+          child: InkResponse(
+            onTap: (!isLocked && canTake)
+                ? () => context.read<BoardState>().take(tile)
+                : null,
+            child: Center(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 160),
+                transitionBuilder: (w, anim) => ScaleTransition(
+                  scale:
+                      CurvedAnimation(parent: anim, curve: Curves.easeOutBack),
+                  child: w,
+                ),
+                child: SizedBox(
+                  key: ValueKey(side), // animate only when side changes
+                  width: size,
+                  height: size,
+                  child: FittedBox(
+                    child:
+                        PiecePalette.maybeOf(context)?.forSide(context, side) ??
+                            (side == Side.x
+                                ? const Icon(Icons.close)
+                                : side == Side.o
+                                    ? const Icon(Icons.radio_button_unchecked)
+                                    : const SizedBox.shrink()),
+                  ),
+                ),
               ),
             ),
           ),

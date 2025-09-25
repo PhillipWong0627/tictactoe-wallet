@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -49,6 +50,30 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
   late DateTime _startOfPlay;
 
   late final AiOpponent opponent;
+  late CoinIcon _playerCoin;
+  late CoinIcon _opponentCoin;
+
+  @override
+  void initState() {
+    super.initState();
+
+    opponent = widget.level.aiOpponentBuilder(widget.level.setting);
+    _log.info('$opponent enters the fray');
+
+    _startOfPlay = DateTime.now();
+
+    // Preload ad for the win screen.
+    // Choose coins (simple version; you can pull player's choice from Settings)
+    _playerCoin = CoinIcon.generic; // from settings later
+    final choices = CoinIcon.values.where((c) => c != _playerCoin).toList();
+    choices.shuffle(Random());
+    _opponentCoin = choices.first;
+
+    // // (If you switch to assets later)
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   precacheCoins(context, {_playerCoin, _opponentCoin});
+    // });
+  }
 
   void _onDraw() {
     if (!mounted) return;
@@ -221,40 +246,6 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
         ),
       ),
     );
-  }
-
-  late CoinIcon _playerCoin;
-  late CoinIcon _opponentCoin;
-
-  @override
-  void initState() {
-    super.initState();
-
-    opponent = widget.level.aiOpponentBuilder(widget.level.setting);
-    _log.info('$opponent enters the fray');
-
-    _startOfPlay = DateTime.now();
-
-    // Preload ad for the win screen.
-    // Choose coins (simple version; you can pull player's choice from Settings)
-    _playerCoin = CoinIcon.generic; // from settings later
-    final choices = CoinIcon.values.where((c) => c != _playerCoin).toList();
-    choices.shuffle();
-    _opponentCoin = choices.first;
-
-    // If you want randomize the AI coin:
-    // final coins = <Widget Function(BuildContext)>[
-    //   (_) => const Icon(Icons.currency_bitcoin),
-    //   (_) => const Icon(Icons.toll_outlined),        // placeholder for ETH
-    //   (_) => const Icon(Icons.circle_outlined),      // placeholder for SOL
-    // ];
-    // coins.shuffle();
-    // _aiPiece = coins.first;
-
-    // (Optional) Preload a win-screen interstitial
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   context.read<AdsController?>()?.preloadInterstitial();
-    // });
   }
 
   void _aiOpponentWon() {

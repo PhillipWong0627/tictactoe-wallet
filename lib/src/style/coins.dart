@@ -1,18 +1,18 @@
 // lib/src/style/coins.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 
-enum CoinIcon { generic, btc, eth, sol }
+enum CoinIcon { generic, btc, eth, base }
 
-Icon coinIcon(CoinIcon c) {
+Widget coinIcon(CoinIcon c) {
   switch (c) {
     case CoinIcon.btc:
-      return const Icon(Icons.currency_bitcoin);
-    // ETH/SOL don’t exist in Material Icons — use generic or your own assets for now:
+      return SvgPicture.asset('assets/coins/btc-logo.svg');
     case CoinIcon.eth:
-      return const Icon(Icons.toll_outlined);
-    case CoinIcon.sol:
-      return const Icon(Icons.circle_outlined);
+      return SvgPicture.asset('assets/coins/eth-logo.svg');
+    case CoinIcon.base:
+      return Image.asset('assets/coins/base.png');
     case CoinIcon.generic:
-      return const Icon(Icons.monetization_on);
+      return Image.asset('assets/coins/icon-tux-dark.png');
   }
 }
