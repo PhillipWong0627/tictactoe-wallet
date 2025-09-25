@@ -7,6 +7,8 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:logging/logging.dart' hide Level;
 import 'package:provider/provider.dart';
 import 'package:tictactoe/src/ads/banner_ad_widget.dart';
+import 'package:tictactoe/src/style/coins.dart';
+import 'package:tictactoe/src/style/piece_palette.dart';
 
 import '../ai/ai_opponent.dart';
 import '../audio/audio_controller.dart';
@@ -110,89 +112,94 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
                         color: palette.redPen,
                       );
 
-                  return _ResponsivePlaySessionScreen(
-                    levelWidget: _LevelChip(number: widget.level.number),
-                    playerName: TextSpan(
-                      text: playerName,
-                      style: textStyle,
-                      recognizer: TapGestureRecognizer()
-                        ..onTap = () => showCustomNameDialog(context),
-                    ),
-                    opponentName: TextSpan(
-                      text: opponent.name,
-                      style: textStyle,
-                      recognizer: TapGestureRecognizer()
-                        // TODO: implement
-                        //       (except maybe not, because in user testing,
-                        //        nobody has ever touched this)
-                        ..onTap = () => _log
-                            .severe('Tapping opponent name NOT IMPLEMENTED'),
-                    ),
-                    mainBoardArea: Center(
-                      child: DelayedAppear(
-                        ms: ScreenDelays.fourth,
-                        delayStateCreation: true,
-                        onDelayFinished: () {
-                          final audioController =
-                              context.read<AudioController>();
-                          audioController.playSfx(SfxType.swishSwish);
-                        },
-                        child: Board(
-                          key: const Key('main board'),
-                          setting: widget.level.setting,
+                  return PiecePalette(
+                    playerPiece: (_) => coinIcon(_playerCoin),
+                    aiPiece: (_) => coinIcon(_opponentCoin),
+                    child: _ResponsivePlaySessionScreen(
+                      levelWidget: _LevelChip(number: widget.level.number),
+                      playerName: TextSpan(
+                        text: playerName,
+                        style: textStyle,
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () => showCustomNameDialog(context),
+                      ),
+                      opponentName: TextSpan(
+                        text: opponent.name,
+                        style: textStyle,
+                        recognizer: TapGestureRecognizer()
+                          // TODO: implement
+                          //       (except maybe not, because in user testing,
+                          //        nobody has ever touched this)
+                          ..onTap = () => _log
+                              .severe('Tapping opponent name NOT IMPLEMENTED'),
+                      ),
+                      mainBoardArea: Center(
+                        child: DelayedAppear(
+                          ms: ScreenDelays.fourth,
+                          delayStateCreation: true,
+                          onDelayFinished: () {
+                            final audioController =
+                                context.read<AudioController>();
+                            audioController.playSfx(SfxType.swishSwish);
+                          },
+                          child: Board(
+                            key: const Key('main board'),
+                            setting: widget.level.setting,
+                          ),
                         ),
                       ),
-                    ),
-                    restartButtonArea: _RestartButton(
-                      _resetHint.stream,
-                      onTap: () {
-                        final audioController = context.read<AudioController>();
-                        audioController.playSfx(SfxType.buttonTap);
-
-                        context.read<BoardState>().clearBoard();
-                        _startOfPlay = DateTime.now();
-
-                        Future.delayed(const Duration(milliseconds: 200))
-                            .then((_) {
-                          if (!mounted) return;
-                          context.read<BoardState>().initialize();
-                        });
-
-                        Future.delayed(const Duration(milliseconds: 1000))
-                            .then((_) {
-                          if (!mounted) return;
-                          showHintSnackbar(context);
-                        });
-                      },
-                    ),
-                    backButtonArea: DelayedAppear(
-                      ms: ScreenDelays.first,
-                      child: InkResponse(
+                      restartButtonArea: _RestartButton(
+                        _resetHint.stream,
                         onTap: () {
                           final audioController =
                               context.read<AudioController>();
                           audioController.playSfx(SfxType.buttonTap);
 
-                          GoRouter.of(context).pop();
+                          context.read<BoardState>().clearBoard();
+                          _startOfPlay = DateTime.now();
+
+                          Future.delayed(const Duration(milliseconds: 200))
+                              .then((_) {
+                            if (!mounted) return;
+                            context.read<BoardState>().initialize();
+                          });
+
+                          Future.delayed(const Duration(milliseconds: 1000))
+                              .then((_) {
+                            if (!mounted) return;
+                            showHintSnackbar(context);
+                          });
                         },
-                        child: Tooltip(
-                          message: 'Back',
-                          child: Image.asset('assets/images/back.png'),
+                      ),
+                      backButtonArea: DelayedAppear(
+                        ms: ScreenDelays.first,
+                        child: InkResponse(
+                          onTap: () {
+                            final audioController =
+                                context.read<AudioController>();
+                            audioController.playSfx(SfxType.buttonTap);
+
+                            GoRouter.of(context).pop();
+                          },
+                          child: Tooltip(
+                            message: 'Back',
+                            child: Image.asset('assets/images/back.png'),
+                          ),
                         ),
                       ),
-                    ),
-                    settingsButtonArea: DelayedAppear(
-                      ms: ScreenDelays.third,
-                      child: InkResponse(
-                        onTap: () {
-                          final audioController =
-                              context.read<AudioController>();
-                          audioController.playSfx(SfxType.buttonTap);
-                          context.push('/settings'); // open settings
-                        },
-                        child: Tooltip(
-                          message: 'Settings',
-                          child: Image.asset('assets/images/settings.png'),
+                      settingsButtonArea: DelayedAppear(
+                        ms: ScreenDelays.third,
+                        child: InkResponse(
+                          onTap: () {
+                            final audioController =
+                                context.read<AudioController>();
+                            audioController.playSfx(SfxType.buttonTap);
+                            context.push('/settings'); // open settings
+                          },
+                          child: Tooltip(
+                            message: 'Settings',
+                            child: Image.asset('assets/images/settings.png'),
+                          ),
                         ),
                       ),
                     ),
@@ -216,6 +223,9 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
     );
   }
 
+  late CoinIcon _playerCoin;
+  late CoinIcon _opponentCoin;
+
   @override
   void initState() {
     super.initState();
@@ -226,6 +236,25 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
     _startOfPlay = DateTime.now();
 
     // Preload ad for the win screen.
+    // Choose coins (simple version; you can pull player's choice from Settings)
+    _playerCoin = CoinIcon.generic; // from settings later
+    final choices = CoinIcon.values.where((c) => c != _playerCoin).toList();
+    choices.shuffle();
+    _opponentCoin = choices.first;
+
+    // If you want randomize the AI coin:
+    // final coins = <Widget Function(BuildContext)>[
+    //   (_) => const Icon(Icons.currency_bitcoin),
+    //   (_) => const Icon(Icons.toll_outlined),        // placeholder for ETH
+    //   (_) => const Icon(Icons.circle_outlined),      // placeholder for SOL
+    // ];
+    // coins.shuffle();
+    // _aiPiece = coins.first;
+
+    // (Optional) Preload a win-screen interstitial
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   context.read<AdsController?>()?.preloadInterstitial();
+    // });
   }
 
   void _aiOpponentWon() {
