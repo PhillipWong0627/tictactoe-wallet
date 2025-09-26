@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'dart:math';
 
 import 'package:tictactoe/src/ai/ai_opponent.dart';
@@ -26,7 +27,11 @@ class RandomOpponent extends AiOpponent {
         }
       }
     }
-
+    // Available Empty Tile
+    developer.log(options.toString());
+    // Random number from emtpy list.length
+    developer.log(_random.nextInt(options.length).toString());
+    // Opponent Choose the index and select the tile
     return options[_random.nextInt(options.length)];
   }
 }

@@ -44,7 +44,7 @@ class LevelSelectionScreen extends StatelessWidget {
                     aspectRatio: 1,
                     child: Column(
                       children: [
-                        for (var y = 0; y < 3; y++)
+                        for (var y = 0; y < 4; y++)
                           Expanded(
                             child: Row(
                               children: [

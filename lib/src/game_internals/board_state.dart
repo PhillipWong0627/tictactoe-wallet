@@ -229,7 +229,15 @@ class BoardState extends ChangeNotifier {
     notifyListeners();
   }
 
+  final Map<Tile, Side> _hypo = {};
+
+  void placeHypothetical(Tile t, Side s) => _hypo[t] = s;
+  void removeHypothetical(Tile t) => _hypo.remove(t);
+
   Side whoIsAt(Tile tile) {
+    final h = _hypo[tile];
+    if (h != null) return h;
+
     final pointer = tile.toPointer(setting);
     bool takenByX = _xTaken.contains(pointer);
     bool takenByO = _oTaken.contains(pointer);

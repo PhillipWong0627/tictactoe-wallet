@@ -1,3 +1,6 @@
+import 'package:tictactoe/src/ai/minimax_opponent.dart';
+import 'package:tictactoe/src/ai/threat_minimax_opponent.dart';
+
 import '../ai/ai_opponent.dart';
 import '../ai/humanlike_opponent.dart';
 import '../ai/random_opponent.dart';
@@ -110,6 +113,91 @@ final gameLevels = [
     ),
     achievementIdIOS: 'finished',
     achievementIdAndroid: 'CgkIgZ29mawJEAIQBA',
+  ),
+  // GameLevel(
+  //   number: 10,
+  //   setting: const BoardSetting(15, 15, 5), // 大盘 k=5
+  //   difficulty: 99,
+  //   aiOpponentBuilder: (setting) => HumanlikeOpponent(
+  //     setting,
+  //     name: 'Grandmaster',
+  //     // 让“最优解”主导：先看 bestPlay，再看 humanlike 的交集
+  //     bestPlayCount: 2, // 只保留最强的少数候选
+  //     humanlikePlayCount: 50, // 允许做人味筛选，但很难盖过最优解
+  //     stubbornness: 0.0, // 绝不执着于上一步位置
+
+  //     // 高强度防守与进攻：k=5 时，对 k-1/k-2 赋予极高分
+  //     playerScoring: const [
+  //       1, // 玩家在该线有0子：轻微威胁
+  //       40, // 1连
+  //       200, // 2连
+  //       2000, // 3连（要重视）
+  //       2000000, // 4连（必须堵）
+  //       0, // 完成线，不再计分
+  //     ],
+  //     aiScoring: const [
+  //       2, // 我方0子：轻微潜力
+  //       60, // 1连
+  //       300, // 2连
+  //       3000, // 3连（强势推进）
+  //       3000000, // 4连（马上赢，极大权重）
+  //       0,
+  //     ],
+  //   ),
+  //   achievementIdIOS: 'grandmaster_cleared',
+  //   achievementIdAndroid: 'CgkIgZ29mawJEAIQCA',
+  // ),
+  GameLevel(
+    number: 10,
+    setting: const BoardSetting(15, 15, 5), // 大盘 k=5
+    difficulty: 150,
+    aiOpponentBuilder: (setting) => ThreatMinimaxOpponent(
+      setting,
+      name: 'ThreatMaster',
+      maxDepth: 4, // hard; try 3 if slow on older phones
+      timeLimitMs: 140, // tune 120–180ms
+      maxCandidates: 12,
+      proximityRadius: 2,
+      playerScoring: const [1, 60, 400, 10000, 2000000, 0],
+      aiScoring: const [2, 80, 600, 12000, 3000000, 0],
+    ),
+    achievementIdIOS: 'threat_master',
+    achievementIdAndroid: 'CgkIgZ29mawJEAIQDw',
+  ),
+  GameLevel(
+    number: 11,
+    setting:
+        const BoardSetting(15, 15, 5, aiStarts: true), // big board, AI opens
+    difficulty: 150,
+    aiOpponentBuilder: (setting) => ThreatMinimaxOpponent(
+      setting,
+      name: 'ThreatMaster',
+      maxDepth: 4, // hard; try 3 if slow on older phones
+      timeLimitMs: 300, // tune 120–180ms
+      maxCandidates: 12,
+      proximityRadius: 2,
+      playerScoring: const [1, 60, 400, 10000, 2000000, 0],
+      aiScoring: const [2, 80, 600, 12000, 3000000, 0],
+    ),
+    achievementIdIOS: 'vct_clear',
+    achievementIdAndroid: 'CgkIgZ29mawJEAIQEA',
+  ),
+  GameLevel(
+    number: 12,
+    setting: const BoardSetting(15, 15, 5, aiStarts: true),
+    difficulty: 120, // higher than Nightmare
+    aiOpponentBuilder: (setting) => MinimaxOpponent(
+      setting,
+      name: 'Grandmaster+',
+      depth: 4, // try 2 if device is slow; 4 if you dare
+      maxCandidates: 16, // search width cap
+      proximityRadius: 2,
+      // crank weights for must-block/must-win
+      playerScoring: const [1, 60, 400, 10000, 2000000, 0],
+      aiScoring: const [2, 80, 600, 12000, 3000000, 0],
+    ),
+    achievementIdIOS: 'grandmaster_plus',
+    achievementIdAndroid: 'CgkIgZ29mawJEAIQDQ',
   ),
 ];
 
