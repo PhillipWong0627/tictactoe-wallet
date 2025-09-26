@@ -1,3 +1,6 @@
+import 'dart:developer' as developer;
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -27,6 +30,8 @@ class _WinGameScreenState extends State<WinGameScreen> {
   void initState() {
     super.initState();
   }
+
+  final _rng = math.Random(); // reuse the same RNG
 
   @override
   Widget build(BuildContext context) {
@@ -74,18 +79,24 @@ class _WinGameScreenState extends State<WinGameScreen> {
         ),
         rectangularMenuArea: RoughButton(
           onTap: () {
-            final controller = context.read<AdsController?>();
+            // 30% chance to show an interstitial, else just pop
+            const p = 0.30;
+            final roll = _rng.nextDouble(); // ← sample once
+            developer.log('interstitial roll=$roll (p=$p)');
 
-            if (controller == null) {
-              GoRouter.of(context).pop(); // no ads controller, just continue
-              return;
-            } else {
-              // Load + show; when the ad closes (or fails), pop.
-              controller.loadInterstitialAd(onClose: () {
-                if (!context.mounted) return;
-                GoRouter.of(context).pop();
-              });
+            // Show interstitial only if roll < p
+            if (roll < p) {
+              final controller = context.read<AdsController?>();
+              if (controller != null) {
+                controller.loadInterstitialAd(onClose: () {
+                  if (!context.mounted) return;
+                  GoRouter.of(context).pop();
+                });
+                return; // don't fall through
+              }
             }
+            // No controller or roll >= p → just continue
+            GoRouter.of(context).pop();
           },
           disabled: adBusy, // blocks taps while ad is loading/showing
           showBusyWhenDisabled: true, // tiny spinner at the right

@@ -28,7 +28,6 @@ class AdsController {
   void loadInterstitialAd({VoidCallback? onClose}) {
     if (_busy) return; // Guard against spam
     _busy = true;
-    log(AdIds.interstitial());
     InterstitialAd.load(
       adUnitId: AdIds.interstitial(),
       request: const AdRequest(),

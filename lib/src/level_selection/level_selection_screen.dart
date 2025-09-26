@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:tictactoe/src/ads/ads_controller.dart';
 
 import '../audio/sounds.dart';
 import '../player_progress/player_progress.dart';
@@ -90,14 +91,24 @@ class _LevelButton extends StatelessWidget {
     final available = playerProgress.highestLevelReached + 1 >= number;
 
     /// We allow the player to skip one level.
-    final availableWithSkip = playerProgress.highestLevelReached + 2 >= number;
+    final availableWithSkip =
+        !available && playerProgress.highestLevelReached + 2 >= number;
 
     return DelayedAppear(
       ms: ScreenDelays.second + (number - 1) * 70,
       child: RoughButton(
-          onTap: availableWithSkip
-              ? () => GoRouter.of(context).go('/play/session/$number')
-              : null,
+          onTap: () {
+            final controller = context.read<AdsController?>();
+            if (available) {
+              GoRouter.of(context).go('/play/session/$number');
+            } else if (availableWithSkip) {
+              controller?.loadInterstitialAd(onClose: () {
+                GoRouter.of(context).go('/play/session/$number');
+              });
+            } else {
+              null;
+            }
+          },
           soundEffect: SfxType.erase,
           child: SizedBox.expand(
             child: Stack(
@@ -129,9 +140,57 @@ class _LevelButton extends StatelessWidget {
                       color: palette.ink,
                     ),
                   ),
+                // Watch Ads icon (only if availableWithSkip)
+                if (availableWithSkip)
+                  Positioned(
+                    // right: 20,
+                    bottom: 4, // place lock under the number
+                    child: _buildWatchAdPill(),
+                  ),
               ],
             ),
           )),
     );
   }
+}
+
+// Put this inside the same widget/state class where you call it (like _buildStartButton).
+Widget _buildWatchAdPill({
+  String text = 'AD',
+  Color fill = const Color(0xFFFFC107), // amber
+  Color border = const Color(0xFFFF9F00), // deeper orange border
+  Color textColor = const Color(0xFF3E2723),
+  double fontSize = 10,
+  EdgeInsetsGeometry padding = const EdgeInsets.symmetric(
+    vertical: 2,
+    horizontal: 4,
+  ),
+  double radius = 8,
+}) {
+  final badge = Container(
+    padding: padding,
+    decoration: BoxDecoration(
+      color: fill,
+      borderRadius: BorderRadius.circular(radius),
+      border: Border.all(color: border, width: 2),
+      boxShadow: [
+        BoxShadow(
+          color: border.withValues(alpha: 0.45),
+          blurRadius: 10,
+          spreadRadius: 1.5,
+        ),
+      ],
+    ),
+    child: Text(
+      text,
+      style: TextStyle(
+        fontFamily: 'Permanent Marker',
+        fontSize: fontSize,
+        color: textColor,
+        height: 1.0,
+      ),
+    ),
+  );
+
+  return Semantics(label: text, readOnly: true, child: badge);
 }
