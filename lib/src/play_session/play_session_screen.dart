@@ -7,6 +7,8 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:logging/logging.dart' hide Level;
 import 'package:provider/provider.dart';
 import 'package:tictactoe/src/ads/banner_ad_widget.dart';
+import 'package:tictactoe/src/play_session/taunt_manager.dart';
+import 'package:tictactoe/src/style/snack_bar.dart';
 
 import '../ai/ai_opponent.dart';
 import '../audio/audio_controller.dart';
@@ -35,6 +37,7 @@ class PlaySessionScreen extends StatefulWidget {
 
 class _PlaySessionScreenState extends State<PlaySessionScreen> {
   static final _log = Logger('PlaySessionScreen');
+  final TauntManager _taunts = TauntManager();
 
   static const _celebrationDuration = Duration(milliseconds: 2000);
 
@@ -56,11 +59,7 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
     audio.playSfx(SfxType.buttonTap);
 
     _resetHint.add(null); // bump the Restart button
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.clearSnackBars();
-    messenger.showSnackBar(
-      const SnackBar(content: Text("It's a draw - try again !")),
-    );
+    showSnackBar("It's a draw - try again !");
   }
 
   @override
@@ -294,6 +293,13 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
   void _aiOpponentWon() {
     // "Pop" the reset button to remind the player what to do next.
     _resetHint.add(null);
+    // 👇 show a short taunt on AI victory
+    final msg = _taunts.maybeTaunt(event: 'ai_win');
+    if (!mounted) return;
+
+    if (msg != null) {
+      showSnackBar(msg);
+    }
   }
 
   void _playerWon() async {
