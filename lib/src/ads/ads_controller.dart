@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:tictactoe/src/ads/ad_ids.dart';
+import 'package:tictactoe/src/ads/ad_ids.dart';
 
 import 'preloaded_banner_ad.dart';
 
@@ -26,6 +27,7 @@ class AdsController {
   }
 
   void loadInterstitialAd({VoidCallback? onClose}) {
+    if (_busy) return; // Guard against spam
     if (_busy) return; // Guard against spam
     _busy = true;
     InterstitialAd.load(
@@ -109,7 +111,12 @@ class AdsController {
         // // iOS
         // : 'ca-app-pub-3457855080577194/7200237080';
         ? 'ca-app-pub-3940256099942544/6300978111'
+        // ? 'ca-app-pub-3457855080577194/9115953980'
+        // // iOS
+        // : 'ca-app-pub-3457855080577194/7200237080';
+        ? 'ca-app-pub-3940256099942544/6300978111'
         // iOS
+        : 'ca-app-pub-3940256099942544/6300978111';
         : 'ca-app-pub-3940256099942544/6300978111';
     _preloadedAd =
         PreloadedBannerAd(size: AdSize.mediumRectangle, adUnitId: adUnitId);
