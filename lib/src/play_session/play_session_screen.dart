@@ -143,28 +143,6 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
                         ),
                       ),
                     ),
-                    restartButtonArea: _RestartButton(
-                      _resetHint.stream,
-                      onTap: () {
-                        final audioController = context.read<AudioController>();
-                        audioController.playSfx(SfxType.buttonTap);
-
-                        context.read<BoardState>().clearBoard();
-                        _startOfPlay = DateTime.now();
-
-                        Future.delayed(const Duration(milliseconds: 200))
-                            .then((_) {
-                          if (!mounted) return;
-                          context.read<BoardState>().initialize();
-                        });
-
-                        Future.delayed(const Duration(milliseconds: 1000))
-                            .then((_) {
-                          if (!mounted) return;
-                          showHintSnackbar(context);
-                        });
-                      },
-                    ),
                     backButtonArea: DelayedAppear(
                       ms: ScreenDelays.first,
                       child: InkResponse(
@@ -195,6 +173,91 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
                           child: Image.asset('assets/images/settings.png'),
                         ),
                       ),
+                    ),
+                    actionsArea: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Undo button
+                        InkResponse(
+                          onTap: () {
+                            final audio = context.read<AudioController>();
+                            audio.playSfx(SfxType.buttonTap);
+
+                            final state = context.read<BoardState>();
+                            if (state.canUndo) state.undoFullTurn();
+                          },
+                          child: Column(
+                            children: const [
+                              Icon(Icons.undo, size: 32, color: Colors.black),
+                              SizedBox(height: 4),
+                              Text('Undo',
+                                  style: TextStyle(
+                                    fontFamily: 'Permanent Marker',
+                                    fontSize: 14,
+                                  )),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 24),
+
+                        // Restart button
+                        InkResponse(
+                          onTap: () {
+                            final audio = context.read<AudioController>();
+                            audio.playSfx(SfxType.buttonTap);
+
+                            context.read<BoardState>().clearBoard();
+                            _startOfPlay = DateTime.now();
+
+                            Future.delayed(const Duration(milliseconds: 200))
+                                .then((_) {
+                              if (!mounted) return;
+                              context.read<BoardState>().initialize();
+                            });
+
+                            Future.delayed(const Duration(milliseconds: 1000))
+                                .then((_) {
+                              if (!mounted) return;
+                              showHintSnackbar(context);
+                            });
+                          },
+                          child: Column(
+                            children: const [
+                              Icon(Icons.refresh,
+                                  size: 32, color: Colors.black),
+                              SizedBox(height: 4),
+                              Text('Restart',
+                                  style: TextStyle(
+                                    fontFamily: 'Permanent Marker',
+                                    fontSize: 14,
+                                  )),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 24),
+
+                        // // (Future) Hint button placeholder
+                        // InkResponse(
+                        //   onTap: () {
+                        //     final audio = context.read<AudioController>();
+                        //     audio.playSfx(SfxType.buttonTap);
+                        //     showHintSnackbar(
+                        //         context); // already exists in your code
+                        //   },
+                        //   child: Column(
+                        //     children: const [
+                        //       Icon(Icons.lightbulb_outline,
+                        //           size: 32, color: Colors.black),
+                        //       SizedBox(height: 4),
+                        //       Text('Hint',
+                        //           style: TextStyle(
+                        //             fontFamily: 'Permanent Marker',
+                        //             fontSize: 14,
+                        //           )),
+                        //     ],
+                        //   ),
+                        // ),
+                      ],
                     ),
                   );
                 },
@@ -370,8 +433,10 @@ class _ResponsivePlaySessionScreen extends StatelessWidget {
   final Widget backButtonArea;
 
   final Widget settingsButtonArea;
+  final Widget actionsArea;
 
-  final Widget restartButtonArea;
+  // final Widget restartButtonArea;
+  // final Widget undoButtonArea;
 
   final TextSpan playerName;
 
@@ -388,7 +453,11 @@ class _ResponsivePlaySessionScreen extends StatelessWidget {
     required this.mainBoardArea,
     required this.backButtonArea,
     required this.settingsButtonArea,
-    required this.restartButtonArea,
+    required this.actionsArea, // 👈 instead of restart/undo separately
+
+    // required this.restartButtonArea,
+    // required this.undoButtonArea,
+
     required this.playerName,
     required this.opponentName,
     required this.levelWidget,
@@ -494,7 +563,12 @@ class _ResponsivePlaySessionScreen extends StatelessWidget {
                 maintainBottomViewPadding: true,
                 child: Padding(
                   padding: padding,
-                  child: restartButtonArea,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      actionsArea, // 👈 contains Undo, Restart, future Hint
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -549,8 +623,8 @@ class _ResponsivePlaySessionScreen extends StatelessWidget {
                       const Spacer(),
                       Padding(
                         padding: padding,
-                        child: restartButtonArea,
-                      )
+                        child: actionsArea,
+                      ),
                     ],
                   ),
                 ),

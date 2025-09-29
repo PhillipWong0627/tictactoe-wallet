@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:tictactoe/src/ai/ai_opponent.dart';
 import 'package:tictactoe/src/game_internals/board_setting.dart';
+import 'package:tictactoe/src/game_internals/placed_move.dart';
 import 'package:tictactoe/src/game_internals/tile.dart';
 
 class BoardState extends ChangeNotifier {
@@ -27,6 +28,32 @@ class BoardState extends ChangeNotifier {
   final ChangeNotifier draw = ChangeNotifier();
 
   List<Tile>? _winningLine;
+  // --- UNDO support ---
+  final List<PlacedMove> _history = [];
+
+  bool get canUndo => _history.isNotEmpty;
+
+  void _recomputeLatestForSide(Side side) {
+    // Walk history from the end to find latest tile for this side.
+    for (var i = _history.length - 1; i >= 0; i--) {
+      final mv = _history[i];
+      if (mv.side == side) {
+        if (side == Side.x) _latestXTile = mv.tile;
+        if (side == Side.o) _latestOTile = mv.tile;
+        return;
+      }
+    }
+    // No move for this side remains
+    if (side == Side.x) _latestXTile = null;
+    if (side == Side.o) _latestOTile = null;
+  }
+
+  void _clearTile(Tile tile, Side side) {
+    final pointer = tile.toPointer(setting);
+    final set = _selectSet(side);
+    set.remove(pointer);
+    // latestX/latestO will be recomputed by caller when needed
+  }
 
   BoardState.clean(BoardSetting setting, AiOpponent aiOpponent)
       : this._(setting, {}, {}, aiOpponent, null, null);
@@ -81,15 +108,29 @@ class BoardState extends ChangeNotifier {
     _winningLine?.clear();
     _latestXTile = null;
     _latestOTile = null;
+    _history.clear(); // <--- add this
+
     _isLocked = true;
 
     notifyListeners();
   }
 
   void initialize() {
-    _oTaken.addAll(_generateInitialOTaken());
-    _isLocked = false;
+    _oTaken.clear();
+    _xTaken.clear();
+    _winningLine?.clear();
+    _history.clear();
+    _latestXTile = null;
+    _latestOTile = null;
 
+    if (setting.aiStarts) {
+      final center = Tile((setting.m / 2).floor(), (setting.n ~/ 2).floor());
+      _oTaken.add(center.toPointer(setting));
+      _latestOTile = center;
+      _history.add(PlacedMove(center, Side.o));
+    }
+
+    _isLocked = false;
     notifyListeners();
   }
 
@@ -186,6 +227,8 @@ class BoardState extends ChangeNotifier {
     assert(!_isLocked);
 
     _takeTile(tile, setting.playerSide);
+    _history.add(PlacedMove(tile, setting.playerSide));
+
     _isLocked = true;
 
     final playerJustWon = _getWinner() == setting.playerSide;
@@ -210,6 +253,7 @@ class BoardState extends ChangeNotifier {
 
     final aiTile = aiOpponent.chooseNextMove(this);
     _takeTile(aiTile, setting.aiOpponentSide);
+    _history.add(PlacedMove(aiTile, setting.aiOpponentSide));
 
     if (_getWinner() == setting.aiOpponentSide) {
       aiOpponentWon.notifyListeners();
@@ -302,6 +346,43 @@ class BoardState extends ChangeNotifier {
       };
     } else {
       return {};
+    }
+  }
+
+  /// Undo just the last move (good for PvP or single-step undo).
+  void undoLast() {
+    if (_history.isEmpty) return;
+
+    final last = _history.removeLast();
+    _clearTile(last.tile, last.side);
+    _recomputeLatestForSide(last.side);
+
+    // Unlock for player to move after undo
+    _isLocked = false;
+    _winningLine = null;
+
+    notifyListeners();
+  }
+
+  /// Undo a full turn vs AI (AI move + player's previous move).
+  void undoFullTurn() {
+    if (_history.isEmpty) return;
+
+    // If AI moved last, pop 2. If player moved last, pop 1 (and possibly AI before that).
+    final last = _history.last;
+
+    if (last.side == setting.aiOpponentSide) {
+      // undo AI
+      undoLast();
+      // undo player (if present)
+      if (_history.isNotEmpty) undoLast();
+    } else {
+      // last was player
+      undoLast();
+      // If AI had moved previously, also undo it to revert a full turn
+      if (_history.isNotEmpty && _history.last.side == setting.aiOpponentSide) {
+        undoLast();
+      }
     }
   }
 }

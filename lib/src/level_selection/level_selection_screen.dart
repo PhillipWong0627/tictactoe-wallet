@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:tictactoe/src/ads/ads_controller.dart';
+import 'package:tictactoe/src/style/dialog/dialog.dart';
 
 import '../audio/sounds.dart';
 import '../player_progress/player_progress.dart';
@@ -97,16 +98,35 @@ class _LevelButton extends StatelessWidget {
     return DelayedAppear(
       ms: ScreenDelays.second + (number - 1) * 70,
       child: RoughButton(
-          onTap: () {
+          onTap: () async {
             final controller = context.read<AdsController?>();
             if (available) {
               GoRouter.of(context).go('/play/session/$number');
             } else if (availableWithSkip) {
-              controller?.loadInterstitialAd(onClose: () {
-                GoRouter.of(context).go('/play/session/$number');
-              });
+              // show confirm dialog before watching ad
+              final ok = await showConfirmProceedDialog(
+                context,
+                title: 'Watch Ads?',
+                message: 'Do you want to watch an ad to attempt Level $number?',
+                confirmText: 'Watch Ads',
+                cancelText: 'Cancel',
+                icon: Icons.ondemand_video,
+              );
+              if (ok) {
+                controller?.loadInterstitialAd(onClose: () {
+                  GoRouter.of(context).go('/play/session/$number');
+                });
+              }
             } else {
-              null;
+              // locked, do nothing or show info dialog
+              await showConfirmProceedDialog(
+                context,
+                title: 'Locked',
+                message: 'Beat earlier levels to unlock Level $number.',
+                confirmText: 'OK',
+                cancelText: 'Close',
+                icon: Icons.lock,
+              );
             }
           },
           soundEffect: SfxType.erase,
