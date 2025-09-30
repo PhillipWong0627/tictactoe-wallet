@@ -32,6 +32,10 @@ class BoardState extends ChangeNotifier {
   final List<PlacedMove> _history = [];
 
   bool get canUndo => _history.isNotEmpty;
+// === Game mode & local-PvP turn ===
+  final GameMode mode; // vsAI or localPvP
+  Side _turn = Side.x; // whose turn in local PvP
+  Side get turn => _turn;
 
   void _recomputeLatestForSide(Side side) {
     // Walk history from the end to find latest tile for this side.
@@ -55,8 +59,11 @@ class BoardState extends ChangeNotifier {
     // latestX/latestO will be recomputed by caller when needed
   }
 
-  BoardState.clean(BoardSetting setting, AiOpponent aiOpponent)
-      : this._(setting, {}, {}, aiOpponent, null, null);
+  BoardState.clean(
+    BoardSetting setting,
+    AiOpponent aiOpponent, {
+    GameMode mode = GameMode.vsAI, // 👈 default here
+  }) : this._(setting, {}, {}, aiOpponent, null, null, mode);
 
   @visibleForTesting
   BoardState.withExistingState({
@@ -66,10 +73,18 @@ class BoardState extends ChangeNotifier {
     required Set<int> takenByO,
     Tile? latestX,
     Tile? latestO,
-  }) : this._(setting, takenByX, takenByO, aiOpponent, latestX, latestO);
+    GameMode mode = GameMode.vsAI, // 👈 default here too
+  }) : this._(setting, takenByX, takenByO, aiOpponent, latestX, latestO, mode);
 
-  BoardState._(this.setting, this._xTaken, this._oTaken, this.aiOpponent,
-      this._latestXTile, this._latestOTile);
+  BoardState._(
+    this.setting,
+    this._xTaken,
+    this._oTaken,
+    this.aiOpponent,
+    this._latestXTile,
+    this._latestOTile,
+    this.mode, // 👈 store it
+  );
 
   /// This is `true` if the board game is locked for the player.
   bool get isLocked => _isLocked;
@@ -109,8 +124,10 @@ class BoardState extends ChangeNotifier {
     _latestXTile = null;
     _latestOTile = null;
     _history.clear(); // <--- add this
+    _winningLine = null;
 
     _isLocked = true;
+    _turn = Side.x; // reset turn; initialize() will set again
 
     notifyListeners();
   }
@@ -122,6 +139,14 @@ class BoardState extends ChangeNotifier {
     _history.clear();
     _latestXTile = null;
     _latestOTile = null;
+
+    if (mode == GameMode.localPvP) {
+      // Pass & Play: X starts, no AI auto-move.
+      _turn = Side.x;
+      _isLocked = false;
+      notifyListeners();
+      return; // 👈 skip AI opening
+    }
 
     if (setting.aiStarts) {
       final center = Tile((setting.m / 2).floor(), (setting.n ~/ 2).floor());
@@ -225,16 +250,19 @@ class BoardState extends ChangeNotifier {
     _log.info(() => 'taking $tile');
     assert(canTake(tile));
     assert(!_isLocked);
+    // Decide who is moving: player vs AI mode → playerSide, PvP → current turn
+    final mover = (mode == GameMode.vsAI) ? setting.playerSide : _turn;
 
-    _takeTile(tile, setting.playerSide);
-    _history.add(PlacedMove(tile, setting.playerSide));
+    _takeTile(tile, mover);
+    _history.add(PlacedMove(tile, mover));
 
     _isLocked = true;
 
-    final playerJustWon = _getWinner() == setting.playerSide;
+    final moverJustWon = _getWinner() == mover;
 
-    if (playerJustWon) {
-      playerWon.notifyListeners();
+    if (moverJustWon) {
+      // Reuse existing notifiers (X → playerWon, O → aiOpponentWon)
+      (mover == Side.x ? playerWon : aiOpponentWon).notifyListeners();
       notifyListeners();
       return;
     }
@@ -244,6 +272,14 @@ class BoardState extends ChangeNotifier {
       draw.notifyListeners();
       notifyListeners();
       return;
+    }
+
+    // In local PvP: toggle turn and DO NOT call AI.
+    if (mode == GameMode.localPvP) {
+      _turn = (mover == Side.x) ? Side.o : Side.x;
+      _isLocked = false;
+      notifyListeners();
+      return; // 👈 important: skip AI move
     }
 
     // Time for AI to move.
@@ -392,3 +428,5 @@ enum Side {
   o,
   none,
 }
+
+enum GameMode { vsAI, localPvP }

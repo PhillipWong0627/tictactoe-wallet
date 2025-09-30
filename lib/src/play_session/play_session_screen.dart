@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -50,6 +49,7 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
   late DateTime _startOfPlay;
 
   late final AiOpponent opponent;
+  late GameMode _modeForSession; // captured once under provider
 
   void _onDraw() {
     if (!mounted) return;
@@ -66,6 +66,10 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsController>();
     final palette = context.watch<Palette>();
+    final extra = GoRouterState.of(context).extra;
+    final GameMode selectedMode = (extra is Map && extra['mode'] is GameMode)
+        ? extra['mode'] as GameMode
+        : GameMode.vsAI;
 
     return MultiProvider(
       providers: [
@@ -73,14 +77,14 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
           create: (context) {
             final state = BoardState.clean(
               widget.level.setting,
-              opponent,
+              opponent, mode: selectedMode, // 👈 pass it in
             );
 
             Future.delayed(const Duration(milliseconds: 500)).then((_) {
               if (!mounted) return;
               state.initialize();
             });
-
+            _modeForSession = state.mode;
             state.playerWon.addListener(_playerWon);
             state.aiOpponentWon.addListener(_aiOpponentWon);
             state.draw.addListener(_onDraw);
@@ -293,6 +297,10 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
   void _aiOpponentWon() {
     // "Pop" the reset button to remind the player what to do next.
     _resetHint.add(null);
+    if (_modeForSession == GameMode.localPvP) {
+      showSnackBar("O wins! 🏆");
+      return;
+    }
     // 👇 show a short taunt on AI victory
     final msg = _taunts.maybeTaunt(event: 'ai_win');
     if (!mounted) return;
@@ -303,6 +311,11 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
   }
 
   void _playerWon() async {
+    if (_modeForSession == GameMode.localPvP) {
+      // PvP: no progression/achievements/leaderboard
+      showSnackBar("X wins! 🎉");
+      return;
+    }
     final score = Score(
       widget.level.number,
       widget.level.setting,
