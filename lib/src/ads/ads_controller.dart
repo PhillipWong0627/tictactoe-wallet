@@ -107,14 +107,7 @@ class AdsController {
   /// adverse effects (jank) during start of a new screen.
   void preloadAd() {
     final adUnitId = defaultTargetPlatform == TargetPlatform.android
-        // ? 'ca-app-pub-3457855080577194/9115953980'
-        // // iOS
-        // : 'ca-app-pub-3457855080577194/7200237080';
-        // ? 'ca-app-pub-3457855080577194/9115953980'
-        // // iOS
-        // : 'ca-app-pub-3457855080577194/7200237080';
         ? 'ca-app-pub-3940256099942544/6300978111'
-        // iOS
         : 'ca-app-pub-3940256099942544/6300978111';
     _preloadedAd =
         PreloadedBannerAd(size: AdSize.mediumRectangle, adUnitId: adUnitId);
