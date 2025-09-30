@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:tictactoe/src/style/dialog/dialog.dart';
+import 'package:tictactoe/src/style/snack_bar.dart';
 
 import '../player_progress/player_progress.dart';
 import '../style/palette.dart';
@@ -82,15 +84,19 @@ class SettingsScreen extends StatelessWidget {
             _SettingsLine(
               'Reset progress',
               const Icon(Icons.delete),
-              onSelected: () {
-                context.read<PlayerProgress>().reset();
-
-                final messenger = ScaffoldMessenger.of(context);
-                messenger.clearSnackBars();
-                messenger.showSnackBar(
-                  const SnackBar(
-                      content: Text('Player progress has been reset.')),
+              onSelected: () async {
+                // show confirm dialog before Reset
+                final ok = await showConfirmProceedDialog(
+                  context,
+                  title: 'Reset Progress?',
+                  message: 'Do you want to reset your progress?',
+                  confirmText: 'Yes',
+                  cancelText: 'Cancel',
                 );
+                if (ok) {
+                  context.read<PlayerProgress>().reset();
+                  showSnackBar("Player progress has been reset.");
+                }
               },
             ),
             const Padding(
