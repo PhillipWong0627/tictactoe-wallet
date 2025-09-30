@@ -17,7 +17,7 @@ import '../games_services/games_services.dart';
 import '../games_services/score.dart';
 import '../level_selection/levels.dart';
 import '../player_progress/player_progress.dart';
-import '../settings/custom_name_dialog.dart';
+import '../settings/custom_name_dialog.dart'; // you already have this
 import '../settings/settings.dart';
 import '../style/confetti.dart';
 import '../style/delayed_appear.dart';
@@ -39,33 +39,69 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
   final TauntManager _taunts = TauntManager();
 
   static const _celebrationDuration = Duration(milliseconds: 2000);
-
   static const _preCelebrationDuration = Duration(milliseconds: 500);
 
   final StreamController<void> _resetHint = StreamController.broadcast();
 
   bool _duringCelebration = false;
-
   late DateTime _startOfPlay;
-
   late final AiOpponent opponent;
-  late GameMode _modeForSession; // captured once under provider
+
+  // 👇 captured once under provider so listeners don’t climb the tree
+  late GameMode _modeForSession;
 
   void _onDraw() {
     if (!mounted) return;
-
-    // optional niceties:
     final audio = context.read<AudioController>();
     audio.playSfx(SfxType.buttonTap);
-
-    _resetHint.add(null); // bump the Restart button
+    _resetHint.add(null);
     showSnackBar("It's a draw - try again !");
+  }
+
+  // 👇 small helper to edit second player name (Local PvP)
+  Future<void> _editSecondPlayerName(
+      BuildContext context, String current) async {
+    final controller = TextEditingController(text: current);
+    final palette = context.read<Palette>();
+    await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Second player name'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => Navigator.pop(context),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: ButtonStyle(
+              backgroundColor: WidgetStatePropertyAll(palette.redPen),
+            ),
+            onPressed: () {
+              final v = controller.text.trim().isEmpty
+                  ? 'Friend'
+                  : controller.text.trim();
+              context.read<SettingsController>().player2Name.value = v;
+              Navigator.pop(context);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsController>();
     final palette = context.watch<Palette>();
+
+    // read mode from route
     final extra = GoRouterState.of(context).extra;
     final GameMode selectedMode = (extra is Map && extra['mode'] is GameMode)
         ? extra['mode'] as GameMode
@@ -73,18 +109,23 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
 
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(
+        ChangeNotifierProvider<BoardState>(
           create: (context) {
             final state = BoardState.clean(
               widget.level.setting,
-              opponent, mode: selectedMode, // 👈 pass it in
+              opponent,
+              mode: selectedMode,
             );
 
             Future.delayed(const Duration(milliseconds: 500)).then((_) {
               if (!mounted) return;
               state.initialize();
             });
+
+            // ⚠️ capture the mode only; do NOT read provider later inside listeners
             _modeForSession = state.mode;
+
+            // it’s okay to wire here since we captured mode
             state.playerWon.addListener(_playerWon);
             state.aiOpponentWon.addListener(_aiOpponentWon);
             state.draw.addListener(_onDraw);
@@ -93,229 +134,217 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
           },
         ),
       ],
-      child: IgnorePointer(
-        ignoring: _duringCelebration,
-        child: Scaffold(
-          backgroundColor: palette.backgroundPlaySession,
-          bottomNavigationBar: SafeArea(
-            child: BannerAdWidget(
-              fallbackSize: AdSize.banner, // 320x50 if adaptive not available
+
+      // Use builder so this context is below the provider
+      builder: (context, _) {
+        // for opponent display: compute if PvP and the displayed name
+        final boardState = context.watch<BoardState>();
+        final bool isPvP = boardState.mode == GameMode.localPvP;
+        final secondPlayerName = context.select<SettingsController, String>(
+          (s) => s.player2Name.value,
+        );
+        final displayedOpponentName = isPvP ? secondPlayerName : opponent.name;
+
+        return IgnorePointer(
+          ignoring: _duringCelebration,
+          child: Scaffold(
+            backgroundColor: palette.backgroundPlaySession,
+            bottomNavigationBar: const SafeArea(
+              child: BannerAdWidget(fallbackSize: AdSize.banner),
             ),
-          ),
-          body: Stack(
-            children: [
-              ValueListenableBuilder<String>(
-                valueListenable: settings.playerName,
-                builder: (context, playerName, child) {
-                  final textStyle = DefaultTextStyle.of(context).style.copyWith(
-                        fontFamily: 'Permanent Marker',
-                        fontSize: 24,
-                        color: palette.redPen,
-                      );
+            body: Stack(
+              children: [
+                ValueListenableBuilder<String>(
+                  valueListenable: settings.playerName,
+                  builder: (context, playerName, child) {
+                    return ValueListenableBuilder<String>(
+                      valueListenable: settings.player2Name,
+                      builder: (context, player2Name, _) {
+                        final textStyle =
+                            DefaultTextStyle.of(context).style.copyWith(
+                                  fontFamily: 'Permanent Marker',
+                                  fontSize: 24,
+                                  color: palette.redPen,
+                                );
 
-                  return _ResponsivePlaySessionScreen(
-                    levelWidget: _LevelChip(number: widget.level.number),
-                    playerName: TextSpan(
-                      text: playerName,
-                      style: textStyle,
-                      recognizer: TapGestureRecognizer()
-                        ..onTap = () => showCustomNameDialog(context),
-                    ),
-                    opponentName: TextSpan(
-                      text: opponent.name,
-                      style: textStyle,
-                      recognizer: TapGestureRecognizer()
-                        // TODO: implement
-                        //       (except maybe not, because in user testing,
-                        //        nobody has ever touched this)
-                        ..onTap = () => _log
-                            .severe('Tapping opponent name NOT IMPLEMENTED'),
-                    ),
-                    mainBoardArea: Center(
-                      child: DelayedAppear(
-                        ms: ScreenDelays.fourth,
-                        delayStateCreation: true,
-                        onDelayFinished: () {
-                          final audioController =
-                              context.read<AudioController>();
-                          audioController.playSfx(SfxType.swishSwish);
-                        },
-                        child: Board(
-                          key: const Key('main board'),
-                          setting: widget.level.setting,
-                        ),
-                      ),
-                    ),
-                    backButtonArea: DelayedAppear(
-                      ms: ScreenDelays.first,
-                      child: InkResponse(
-                        onTap: () {
-                          final audioController =
-                              context.read<AudioController>();
-                          audioController.playSfx(SfxType.buttonTap);
+                        return _ResponsivePlaySessionScreen(
+                          levelWidget: _LevelChip(number: widget.level.number),
+                          playerName: TextSpan(
+                            text: playerName,
+                            style: textStyle,
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () => showCustomNameDialog(context,
+                                  isSecondPlayer: false),
+                          ),
+                          opponentName: TextSpan(
+                            text: (_modeForSession == GameMode.localPvP)
+                                ? context
+                                    .watch<SettingsController>()
+                                    .player2Name
+                                    .value
+                                : opponent.name,
+                            style: textStyle,
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () {
+                                if (_modeForSession == GameMode.localPvP) {
+                                  showCustomNameDialog(context,
+                                      isSecondPlayer: true); // 👈 edit P2 name
+                                }
+                              },
+                          ),
+                          mainBoardArea: Center(
+                            child: DelayedAppear(
+                              ms: ScreenDelays.fourth,
+                              delayStateCreation: true,
+                              onDelayFinished: () {
+                                final audioController =
+                                    context.read<AudioController>();
+                                audioController.playSfx(SfxType.swishSwish);
+                              },
+                              child: Board(
+                                key: const Key('main board'),
+                                setting: widget.level.setting,
+                              ),
+                            ),
+                          ),
+                          backButtonArea: DelayedAppear(
+                            ms: ScreenDelays.first,
+                            child: InkResponse(
+                              onTap: () {
+                                final audioController =
+                                    context.read<AudioController>();
+                                audioController.playSfx(SfxType.buttonTap);
+                                GoRouter.of(context).pop();
+                              },
+                              child: Tooltip(
+                                message: 'Back',
+                                child: Image.asset('assets/images/back.png'),
+                              ),
+                            ),
+                          ),
+                          settingsButtonArea: DelayedAppear(
+                            ms: ScreenDelays.third,
+                            child: InkResponse(
+                              onTap: () {
+                                final audioController =
+                                    context.read<AudioController>();
+                                audioController.playSfx(SfxType.buttonTap);
+                                context.push('/settings');
+                              },
+                              child: Tooltip(
+                                message: 'Settings',
+                                child:
+                                    Image.asset('assets/images/settings.png'),
+                              ),
+                            ),
+                          ),
+                          actionsArea: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Undo
+                              InkResponse(
+                                onTap: () {
+                                  final audio = context.read<AudioController>();
+                                  audio.playSfx(SfxType.buttonTap);
+                                  final state = context.read<BoardState>();
+                                  if (state.canUndo) state.undoFullTurn();
+                                },
+                                child: const Column(
+                                  children: [
+                                    Icon(Icons.undo,
+                                        size: 32, color: Colors.black),
+                                    SizedBox(height: 4),
+                                    Text('Undo',
+                                        style: TextStyle(
+                                            fontFamily: 'Permanent Marker',
+                                            fontSize: 14)),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 24),
+                              // Restart
+                              InkResponse(
+                                onTap: () {
+                                  final audio = context.read<AudioController>();
+                                  audio.playSfx(SfxType.buttonTap);
 
-                          GoRouter.of(context).pop();
-                        },
-                        child: Tooltip(
-                          message: 'Back',
-                          child: Image.asset('assets/images/back.png'),
-                        ),
-                      ),
-                    ),
-                    settingsButtonArea: DelayedAppear(
-                      ms: ScreenDelays.third,
-                      child: InkResponse(
-                        onTap: () {
-                          final audioController =
-                              context.read<AudioController>();
-                          audioController.playSfx(SfxType.buttonTap);
-                          context.push('/settings'); // open settings
-                        },
-                        child: Tooltip(
-                          message: 'Settings',
-                          child: Image.asset('assets/images/settings.png'),
-                        ),
-                      ),
-                    ),
-                    actionsArea: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Undo button
-                        InkResponse(
-                          onTap: () {
-                            final audio = context.read<AudioController>();
-                            audio.playSfx(SfxType.buttonTap);
+                                  context.read<BoardState>().clearBoard();
+                                  _startOfPlay = DateTime.now();
 
-                            final state = context.read<BoardState>();
-                            if (state.canUndo) state.undoFullTurn();
-                          },
-                          child: Column(
-                            children: const [
-                              Icon(Icons.undo, size: 32, color: Colors.black),
-                              SizedBox(height: 4),
-                              Text('Undo',
-                                  style: TextStyle(
-                                    fontFamily: 'Permanent Marker',
-                                    fontSize: 14,
-                                  )),
+                                  Future.delayed(
+                                          const Duration(milliseconds: 200))
+                                      .then((_) {
+                                    if (!mounted) return;
+                                    context.read<BoardState>().initialize();
+                                  });
+
+                                  Future.delayed(
+                                          const Duration(milliseconds: 1000))
+                                      .then((_) {
+                                    if (!mounted) return;
+                                    showHintSnackbar(context);
+                                  });
+                                },
+                                child: const Column(
+                                  children: [
+                                    Icon(Icons.refresh,
+                                        size: 32, color: Colors.black),
+                                    SizedBox(height: 4),
+                                    Text('Restart',
+                                        style: TextStyle(
+                                            fontFamily: 'Permanent Marker',
+                                            fontSize: 14)),
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
-                        ),
-                        const SizedBox(width: 24),
-
-                        // Restart button
-                        InkResponse(
-                          onTap: () {
-                            final audio = context.read<AudioController>();
-                            audio.playSfx(SfxType.buttonTap);
-
-                            context.read<BoardState>().clearBoard();
-                            _startOfPlay = DateTime.now();
-
-                            Future.delayed(const Duration(milliseconds: 200))
-                                .then((_) {
-                              if (!mounted) return;
-                              context.read<BoardState>().initialize();
-                            });
-
-                            Future.delayed(const Duration(milliseconds: 1000))
-                                .then((_) {
-                              if (!mounted) return;
-                              showHintSnackbar(context);
-                            });
-                          },
-                          child: Column(
-                            children: const [
-                              Icon(Icons.refresh,
-                                  size: 32, color: Colors.black),
-                              SizedBox(height: 4),
-                              Text('Restart',
-                                  style: TextStyle(
-                                    fontFamily: 'Permanent Marker',
-                                    fontSize: 14,
-                                  )),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 24),
-
-                        // // (Future) Hint button placeholder
-                        // InkResponse(
-                        //   onTap: () {
-                        //     final audio = context.read<AudioController>();
-                        //     audio.playSfx(SfxType.buttonTap);
-                        //     showHintSnackbar(
-                        //         context); // already exists in your code
-                        //   },
-                        //   child: Column(
-                        //     children: const [
-                        //       Icon(Icons.lightbulb_outline,
-                        //           size: 32, color: Colors.black),
-                        //       SizedBox(height: 4),
-                        //       Text('Hint',
-                        //           style: TextStyle(
-                        //             fontFamily: 'Permanent Marker',
-                        //             fontSize: 14,
-                        //           )),
-                        //     ],
-                        //   ),
-                        // ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-              SizedBox.expand(
-                child: Visibility(
-                  visible: _duringCelebration,
-                  child: IgnorePointer(
-                    child: Confetti(
-                      isStopped: !_duringCelebration,
+                        );
+                      },
+                    );
+                  },
+                ),
+                SizedBox.expand(
+                  child: Visibility(
+                    visible: _duringCelebration,
+                    child: const IgnorePointer(
+                      child: Confetti(isStopped: false),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
   @override
   void initState() {
     super.initState();
-
     opponent = widget.level.aiOpponentBuilder(widget.level.setting);
     _log.info('$opponent enters the fray');
-
     _startOfPlay = DateTime.now();
-
-    // Preload ad for the win screen.
   }
 
   void _aiOpponentWon() {
-    // "Pop" the reset button to remind the player what to do next.
     _resetHint.add(null);
     if (_modeForSession == GameMode.localPvP) {
       showSnackBar("O wins! 🏆");
       return;
     }
-    // 👇 show a short taunt on AI victory
     final msg = _taunts.maybeTaunt(event: 'ai_win');
     if (!mounted) return;
-
-    if (msg != null) {
-      showSnackBar(msg);
-    }
+    if (msg != null) showSnackBar(msg);
   }
 
   void _playerWon() async {
     if (_modeForSession == GameMode.localPvP) {
-      // PvP: no progression/achievements/leaderboard
       showSnackBar("X wins! 🎉");
       return;
     }
+
     final score = Score(
       widget.level.number,
       widget.level.setting,
@@ -326,162 +355,51 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
     final playerProgress = context.read<PlayerProgress>();
     playerProgress.setLevelReached(widget.level.number);
 
-    // Let the player see the game just after winning for a bit.
     await Future<void>.delayed(_preCelebrationDuration);
     if (!mounted) return;
 
-    setState(() {
-      _duringCelebration = true;
-    });
+    setState(() => _duringCelebration = true);
 
     final audioController = context.read<AudioController>();
     audioController.playSfx(SfxType.congrats);
 
     final gamesServicesController = context.read<GamesServicesController?>();
     if (gamesServicesController != null) {
-      // Award achievement.
       if (widget.level.awardsAchievement) {
         gamesServicesController.awardAchievement(
           android: widget.level.achievementIdAndroid!,
           iOS: widget.level.achievementIdIOS!,
         );
       }
-
-      // Send score to leaderboard.
       gamesServicesController.submitLeaderboardScore(score);
     }
 
-    /// Give the player some time to see the celebration animation.
     await Future.delayed(_celebrationDuration);
     if (!mounted) return;
-
     GoRouter.of(context).go('/play/won', extra: {'score': score});
   }
 }
 
-class _RestartButton extends StatefulWidget {
-  final Stream<void> resetHint;
-
-  final VoidCallback onTap;
-
-  const _RestartButton(this.resetHint, {required this.onTap});
-
-  @override
-  State<_RestartButton> createState() => _RestartButtonState();
-}
-
-class _RestartButtonState extends State<_RestartButton>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    duration: const Duration(milliseconds: 1500),
-    vsync: this,
-  );
-
-  StreamSubscription? _subscription;
-
-  static final TweenSequence<double> _bump = TweenSequence([
-    // A bit of delay.
-    TweenSequenceItem(tween: Tween(begin: 1, end: 1), weight: 10),
-    // Enlarge.
-    TweenSequenceItem(
-        tween: Tween(begin: 1.0, end: 1.4)
-            .chain(CurveTween(curve: Curves.easeOutCubic)),
-        weight: 1),
-    // Slowly go back to beginning.
-    TweenSequenceItem(
-        tween: Tween(begin: 1.4, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeInCubic)),
-        weight: 3),
-  ]);
-
-  @override
-  void initState() {
-    super.initState();
-    _subscription = widget.resetHint.listen(_handleResetHint);
-  }
-
-  @override
-  void didUpdateWidget(covariant _RestartButton oldWidget) {
-    _subscription?.cancel();
-    _subscription = widget.resetHint.listen(_handleResetHint);
-    super.didUpdateWidget(oldWidget);
-  }
-
-  @override
-  void dispose() {
-    _subscription?.cancel();
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return DelayedAppear(
-      ms: ScreenDelays.fourth,
-      child: InkResponse(
-        onTap: widget.onTap,
-        child: Column(
-          children: [
-            ScaleTransition(
-              scale: _bump.animate(_controller),
-              child: Image.asset('assets/images/restart.png'),
-            ),
-            const Text(
-              'Restart',
-              style: TextStyle(
-                fontFamily: 'Permanent Marker',
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _handleResetHint(void _) {
-    _controller.forward(from: 0);
-  }
-}
-
 class _ResponsivePlaySessionScreen extends StatelessWidget {
-  /// This is the "hero" of the screen. It's more or less square, and will
-  /// be placed in the visual "center" of the screen.
   final Widget mainBoardArea;
-
   final Widget backButtonArea;
-
   final Widget settingsButtonArea;
   final Widget actionsArea;
 
-  // final Widget restartButtonArea;
-  // final Widget undoButtonArea;
-
   final TextSpan playerName;
-
   final TextSpan opponentName;
-
-  // dedicated level widget slot
   final Widget levelWidget;
 
-  /// How much bigger should the [mainBoardArea] be compared to the other
-  /// elements.
   final double mainAreaProminence;
 
   const _ResponsivePlaySessionScreen({
     required this.mainBoardArea,
     required this.backButtonArea,
     required this.settingsButtonArea,
-    required this.actionsArea, // 👈 instead of restart/undo separately
-
-    // required this.restartButtonArea,
-    // required this.undoButtonArea,
-
+    required this.actionsArea,
     required this.playerName,
     required this.opponentName,
     required this.levelWidget,
-
-    // ignore: unused_element
     this.mainAreaProminence = 0.8,
   });
 
@@ -503,19 +421,20 @@ class _ResponsivePlaySessionScreen extends StatelessWidget {
     return DelayedAppear(
       ms: ScreenDelays.second,
       child: RichText(
-          textAlign: textAlign,
-          text: TextSpan(
-            children: [
-              playerName,
-              TextSpan(
-                text: versusText,
-                style: DefaultTextStyle.of(context)
-                    .style
-                    .copyWith(fontFamily: 'Permanent Marker', fontSize: 18),
-              ),
-              opponentName,
-            ],
-          )),
+        textAlign: textAlign,
+        text: TextSpan(
+          children: [
+            playerName,
+            TextSpan(
+              text: versusText,
+              style: DefaultTextStyle.of(context)
+                  .style
+                  .copyWith(fontFamily: 'Permanent Marker', fontSize: 18),
+            ),
+            opponentName,
+          ],
+        ),
+      ),
     );
   }
 
@@ -523,12 +442,11 @@ class _ResponsivePlaySessionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // This widget wants to fill the whole screen.
         final size = constraints.biggest;
         final padding = EdgeInsets.all(size.shortestSide / 30);
 
         if (size.height >= size.width) {
-          // "Portrait" / "mobile" mode.
+          // Portrait
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -539,31 +457,48 @@ class _ResponsivePlaySessionScreen extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(
-                        width: 45,
-                        child: backButtonArea,
-                      ),
+                      SizedBox(width: 45, child: backButtonArea),
                       Expanded(
                         child: Padding(
                           padding: const EdgeInsets.only(
-                            left: 15,
-                            right: 15,
-                            top: 5,
-                          ),
+                              left: 15, right: 15, top: 5),
                           child: Column(
+                            spacing: 6,
                             children: [
                               _buildVersusText(context, TextAlign.center),
-                              const SizedBox(height: 6),
-                              // 👉 level placed under names, never overlaps
+
+                              // 👇 turn indicator (Local PvP only)
+                              Selector<BoardState, (GameMode, Side)>(
+                                selector: (_, s) => (s.mode, s.turn),
+                                builder: (context, tuple, _) {
+                                  final (mode, turn) = tuple;
+                                  if (mode != GameMode.localPvP) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  final who = (turn == Side.x)
+                                      ? "X's turn"
+                                      : "O's turn";
+                                  final palette = context.watch<Palette>();
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 6),
+                                    child: Text(
+                                      who,
+                                      style: TextStyle(
+                                        fontFamily: 'Permanent Marker',
+                                        fontSize: 16,
+                                        color: palette.ink,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+
                               levelWidget,
                             ],
                           ),
                         ),
                       ),
-                      SizedBox(
-                        width: 45,
-                        child: settingsButtonArea,
-                      ),
+                      SizedBox(width: 45, child: settingsButtonArea),
                     ],
                   ),
                 ),
@@ -584,16 +519,14 @@ class _ResponsivePlaySessionScreen extends StatelessWidget {
                   padding: padding,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      actionsArea, // 👈 contains Undo, Restart, future Hint
-                    ],
+                    children: [actionsArea],
                   ),
                 ),
               ),
             ],
           );
         } else {
-          // "Landscape" / "tablet" mode.
+          // Landscape
           return Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -610,7 +543,6 @@ class _ResponsivePlaySessionScreen extends StatelessWidget {
                         backButtonArea,
                         _buildVersusText(context, TextAlign.start),
                         const SizedBox(height: 6),
-                        // 👉 level sits under the names on the left column
                         levelWidget,
                       ],
                     ),
@@ -635,15 +567,9 @@ class _ResponsivePlaySessionScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Padding(
-                        padding: padding,
-                        child: settingsButtonArea,
-                      ),
+                      Padding(padding: padding, child: settingsButtonArea),
                       const Spacer(),
-                      Padding(
-                        padding: padding,
-                        child: actionsArea,
-                      ),
+                      Padding(padding: padding, child: actionsArea),
                     ],
                   ),
                 ),
@@ -671,7 +597,7 @@ class _LevelChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: palette.ink, width: 1.5),
         boxShadow: const [
-          BoxShadow(blurRadius: 4, offset: Offset(0, 2), color: Colors.black26),
+          BoxShadow(blurRadius: 4, offset: Offset(0, 2), color: Colors.black26)
         ],
       ),
       child: Text(

@@ -63,7 +63,7 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen> {
                   ),
                   ButtonSegment(
                     value: GameMode.localPvP,
-                    label: Text('Pass & Play'),
+                    label: Text('Vs Player'),
                     icon: Icon(Icons.people_outline),
                   ),
                 ],

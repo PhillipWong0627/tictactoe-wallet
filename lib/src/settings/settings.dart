@@ -10,6 +10,8 @@ class SettingsController {
   ValueNotifier<bool> muted = ValueNotifier(false);
 
   ValueNotifier<String> playerName = ValueNotifier('Player');
+  // Second player name for Local PvP
+  final ValueNotifier<String> player2Name = ValueNotifier('Player 2');
 
   ValueNotifier<bool> soundsOn = ValueNotifier(false);
 
@@ -35,6 +37,8 @@ class SettingsController {
     playerName.value = name;
     _persistence.savePlayerName(playerName.value);
   }
+
+  void setPlayer2Name(String name) => player2Name.value = name; // 👈 add this
 
   void toggleMusicOn() {
     musicOn.value = !musicOn.value;

@@ -3,21 +3,28 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../settings/settings.dart';
 
-void showCustomNameDialog(BuildContext context) {
+/// Opens a dialog to edit either Player 1 or Player 2's name.
+void showCustomNameDialog(BuildContext context, {bool isSecondPlayer = false}) {
   showGeneralDialog(
-      context: context,
-      pageBuilder: (
-        BuildContext context,
-        Animation<double> animation,
-        Animation<double> secondaryAnimation,
-      ) =>
-          CustomNameDialog(animation: animation));
+    context: context,
+    pageBuilder: (
+      BuildContext context,
+      Animation<double> animation,
+      Animation<double> secondaryAnimation,
+    ) =>
+        CustomNameDialog(animation: animation, isSecondPlayer: isSecondPlayer),
+  );
 }
 
 class CustomNameDialog extends StatefulWidget {
   final Animation<double> animation;
+  final bool isSecondPlayer;
 
-  const CustomNameDialog({required this.animation, super.key});
+  const CustomNameDialog({
+    required this.animation,
+    this.isSecondPlayer = false,
+    super.key,
+  });
 
   @override
   State<CustomNameDialog> createState() => _CustomNameDialogState();
@@ -28,14 +35,15 @@ class _CustomNameDialogState extends State<CustomNameDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = context.read<SettingsController>();
+
     return ScaleTransition(
       scale: CurvedAnimation(
         parent: widget.animation,
         curve: Curves.easeOutCubic,
       ),
-      // TODO: make this nicer
       child: SimpleDialog(
-        title: const Text('Change name'),
+        title: Text('Change name'),
         children: [
           TextField(
             controller: _controller,
@@ -46,10 +54,13 @@ class _CustomNameDialogState extends State<CustomNameDialog> {
             textCapitalization: TextCapitalization.words,
             textInputAction: TextInputAction.done,
             onChanged: (value) {
-              context.read<SettingsController>().setPlayerName(value);
+              if (widget.isSecondPlayer) {
+                settings.setPlayer2Name(value);
+              } else {
+                settings.setPlayerName(value);
+              }
             },
             onSubmitted: (value) {
-              // Player tapped 'Submit'/'Done' on their keyboard.
               Navigator.pop(context);
             },
           ),
@@ -64,7 +75,10 @@ class _CustomNameDialogState extends State<CustomNameDialog> {
 
   @override
   void didChangeDependencies() {
-    _controller.text = context.read<SettingsController>().playerName.value;
+    final settings = context.read<SettingsController>();
+    _controller.text = widget.isSecondPlayer
+        ? settings.player2Name.value
+        : settings.playerName.value;
     super.didChangeDependencies();
   }
 
