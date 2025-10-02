@@ -58,44 +58,6 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
     showSnackBar("It's a draw - try again !");
   }
 
-  // 👇 small helper to edit second player name (Local PvP)
-  Future<void> _editSecondPlayerName(
-      BuildContext context, String current) async {
-    final controller = TextEditingController(text: current);
-    final palette = context.read<Palette>();
-    await showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Second player name'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) => Navigator.pop(context),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style: ButtonStyle(
-              backgroundColor: WidgetStatePropertyAll(palette.redPen),
-            ),
-            onPressed: () {
-              final v = controller.text.trim().isEmpty
-                  ? 'Friend'
-                  : controller.text.trim();
-              context.read<SettingsController>().player2Name.value = v;
-              Navigator.pop(context);
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsController>();
