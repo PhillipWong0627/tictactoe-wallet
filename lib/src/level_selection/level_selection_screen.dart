@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:tictactoe/src/ads/ads_controller.dart';
 import 'package:tictactoe/src/style/dialog/dialog.dart';
+import 'package:tictactoe/src/widget/ads/watch_ad_badge.dart';
 
 import '../audio/sounds.dart';
 import '../player_progress/player_progress.dart';
@@ -165,52 +166,11 @@ class _LevelButton extends StatelessWidget {
                   Positioned(
                     // right: 20,
                     bottom: 4, // place lock under the number
-                    child: _buildWatchAdPill(),
+                    child: const WatchAdBadge(), // small amber badge
                   ),
               ],
             ),
           )),
     );
   }
-}
-
-// Put this inside the same widget/state class where you call it (like _buildStartButton).
-Widget _buildWatchAdPill({
-  String text = 'AD',
-  Color fill = const Color(0xFFFFC107), // amber
-  Color border = const Color(0xFFFF9F00), // deeper orange border
-  Color textColor = const Color(0xFF3E2723),
-  double fontSize = 10,
-  EdgeInsetsGeometry padding = const EdgeInsets.symmetric(
-    vertical: 2,
-    horizontal: 4,
-  ),
-  double radius = 8,
-}) {
-  final badge = Container(
-    padding: padding,
-    decoration: BoxDecoration(
-      color: fill,
-      borderRadius: BorderRadius.circular(radius),
-      border: Border.all(color: border, width: 2),
-      boxShadow: [
-        BoxShadow(
-          color: border.withValues(alpha: 0.45),
-          blurRadius: 10,
-          spreadRadius: 1.5,
-        ),
-      ],
-    ),
-    child: Text(
-      text,
-      style: TextStyle(
-        fontFamily: 'Permanent Marker',
-        fontSize: fontSize,
-        color: textColor,
-        height: 1.0,
-      ),
-    ),
-  );
-
-  return Semantics(label: text, readOnly: true, child: badge);
 }

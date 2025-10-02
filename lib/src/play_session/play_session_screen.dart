@@ -8,7 +8,10 @@ import 'package:logging/logging.dart' hide Level;
 import 'package:provider/provider.dart';
 import 'package:tictactoe/src/ads/banner_ad_widget.dart';
 import 'package:tictactoe/src/play_session/taunt_manager.dart';
+import 'package:tictactoe/src/style/dialog/dialog.dart';
 import 'package:tictactoe/src/style/snack_bar.dart';
+import 'package:tictactoe/src/widget/ads/ad_gated_action.dart';
+import 'package:tictactoe/src/widget/ads/watch_ad_badge.dart';
 
 import '../ai/ai_opponent.dart';
 import '../audio/audio_controller.dart';
@@ -176,27 +179,52 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
                     actionsArea: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Undo button
-                        InkResponse(
-                          onTap: () {
+                        // UNDO (Watch Ads)
+                        AdGatedAction(
+                          requireConfirm: true,
+                          onConfirm: (ctx) => showConfirmProceedDialog(
+                            ctx,
+                            title: 'Watch Ad?',
+                            message: 'Watch an ad to undo your last move.',
+                            confirmText: 'Watch Ad',
+                            cancelText: 'Cancel',
+                            icon: Icons.undo,
+                          ),
+                          onAllowed: () {
                             final audio = context.read<AudioController>();
                             audio.playSfx(SfxType.buttonTap);
-
                             final state = context.read<BoardState>();
                             if (state.canUndo) state.undoFullTurn();
                           },
                           child: Column(
-                            children: const [
-                              Icon(Icons.undo, size: 32, color: Colors.black),
-                              SizedBox(height: 4),
-                              Text('Undo',
-                                  style: TextStyle(
-                                    fontFamily: 'Permanent Marker',
-                                    fontSize: 14,
-                                  )),
+                            children: [
+                              // Wrap the icon and badge together
+                              Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  const Icon(Icons.undo,
+                                      size: 32, color: Colors.black),
+
+                                  // Position the badge bottom-right
+                                  Positioned(
+                                    right: -6, // tweak as needed
+                                    bottom: -6, // tweak as needed
+                                    child: const WatchAdBadge(),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                'Undo',
+                                style: TextStyle(
+                                  fontFamily: 'Permanent Marker',
+                                  fontSize: 14,
+                                ),
+                              ),
                             ],
                           ),
                         ),
+
                         const SizedBox(width: 24),
 
                         // Restart button
