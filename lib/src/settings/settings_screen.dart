@@ -81,24 +81,24 @@ class SettingsScreen extends StatelessWidget {
             //     onSelected: callback,
             //   );
             // }),
-            _SettingsLine(
-              'Reset progress',
-              const Icon(Icons.delete),
-              onSelected: () async {
-                // show confirm dialog before Reset
-                final ok = await showConfirmProceedDialog(
-                  context,
-                  title: 'Reset Progress?',
-                  message: 'Do you want to reset your progress?',
-                  confirmText: 'Yes',
-                  cancelText: 'Cancel',
-                );
-                if (ok) {
-                  context.read<PlayerProgress>().reset();
-                  showSnackBar("Player progress has been reset.");
-                }
-              },
-            ),
+            // _SettingsLine(
+            //   'Reset progress',
+            //   const Icon(Icons.delete),
+            //   onSelected: () async {
+            //     // show confirm dialog before Reset
+            //     final ok = await showConfirmProceedDialog(
+            //       context,
+            //       title: 'Reset Progress?',
+            //       message: 'Do you want to reset your progress?',
+            //       confirmText: 'Yes',
+            //       cancelText: 'Cancel',
+            //     );
+            //     if (ok) {
+            //       context.read<PlayerProgress>().reset();
+            //       showSnackBar("Player progress has been reset.");
+            //     }
+            //   },
+            // ),
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 20, horizontal: 8),
               child: Text('Music by Mr Smith, used with permission.'),
