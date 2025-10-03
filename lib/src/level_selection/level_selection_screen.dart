@@ -11,7 +11,7 @@ import '../style/palette.dart';
 import '../style/responsive_screen.dart';
 import '../style/rough/button.dart';
 
-// 👇 for GameMode (enum) — move this import if you placed GameMode elsewhere
+// For GameMode (enum) — move this import if you placed GameMode elsewhere
 import '../game_internals/board_state.dart';
 
 class LevelSelectionScreen extends StatefulWidget {
@@ -23,6 +23,7 @@ class LevelSelectionScreen extends StatefulWidget {
 
 class _LevelSelectionScreenState extends State<LevelSelectionScreen> {
   GameMode _mode = GameMode.vsAI; // default
+  bool _rpsInitiative = true; // default: RPS ON for Vs AI
 
   @override
   Widget build(BuildContext context) {
@@ -73,6 +74,27 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen> {
                 },
               ),
             ),
+            const SizedBox(height: 12),
+
+            // ===== Initiative toggle (ONLY when Vs AI) =====
+            if (_mode == GameMode.vsAI)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('Style:'),
+                  const SizedBox(width: 10),
+                  SegmentedButton<bool>(
+                    segments: const [
+                      ButtonSegment(value: true, label: Text('RPS')),
+                      ButtonSegment(value: false, label: Text('Classic')),
+                    ],
+                    selected: {_rpsInitiative},
+                    onSelectionChanged: (s) {
+                      setState(() => _rpsInitiative = s.first);
+                    },
+                  ),
+                ],
+              ),
             const SizedBox(height: 50),
 
             // ===== Grid of numbers =====
@@ -89,8 +111,9 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen> {
                               for (var x = 0; x < 3; x++)
                                 AspectRatio(
                                   aspectRatio: 1,
-                                  child:
-                                      _LevelButton(y * 3 + x + 1, mode: _mode),
+                                  child: _LevelButton(y * 3 + x + 1,
+                                      mode: _mode,
+                                      rpsInitiative: _rpsInitiative),
                                 ),
                             ],
                           ),
@@ -122,8 +145,10 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen> {
 class _LevelButton extends StatelessWidget {
   final int number;
   final GameMode mode;
+  final bool rpsInitiative;
 
-  const _LevelButton(this.number, {required this.mode});
+  const _LevelButton(this.number,
+      {required this.mode, required this.rpsInitiative});
 
   @override
   Widget build(BuildContext context) {
@@ -149,8 +174,10 @@ class _LevelButton extends StatelessWidget {
           final controller = context.read<AdsController?>();
 
           if (available) {
-            GoRouter.of(context)
-                .push('/play/session/$number', extra: {'mode': mode});
+            GoRouter.of(context).push(
+              '/play/session/$number',
+              extra: {'mode': mode, 'rps': rpsInitiative},
+            );
           } else if (availableWithSkip) {
             // Confirm before showing ad to attempt the level
             final ok = await showConfirmProceedDialog(
@@ -163,8 +190,10 @@ class _LevelButton extends StatelessWidget {
             );
             if (ok) {
               controller?.loadInterstitialAd(onClose: () {
-                GoRouter.of(context)
-                    .push('/play/session/$number', extra: {'mode': mode});
+                GoRouter.of(context).push(
+                  '/play/session/$number',
+                  extra: {'mode': mode, 'rps': rpsInitiative},
+                );
               });
             }
           } else {

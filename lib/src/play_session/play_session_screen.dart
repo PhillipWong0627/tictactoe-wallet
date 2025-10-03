@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:tictactoe/src/ads/banner_ad_widget.dart';
 import 'package:tictactoe/src/play_session/taunt_manager.dart';
 import 'package:tictactoe/src/rps/rps.dart';
-import 'package:tictactoe/src/rps/rps_overlay.dart';
+import 'package:tictactoe/src/rps/rps_inline_bar.dart';
 import 'package:tictactoe/src/style/snack_bar.dart';
 
 import '../ai/ai_opponent.dart';
@@ -19,7 +19,7 @@ import '../games_services/games_services.dart';
 import '../games_services/score.dart';
 import '../level_selection/levels.dart';
 import '../player_progress/player_progress.dart';
-import '../settings/custom_name_dialog.dart'; // you already have this
+import '../settings/custom_name_dialog.dart';
 import '../settings/settings.dart';
 import '../style/confetti.dart';
 import '../style/delayed_appear.dart';
@@ -49,7 +49,7 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
   late DateTime _startOfPlay;
   late final AiOpponent opponent;
 
-  // 👇 captured once under provider so listeners don’t climb the tree
+  // Captured once under provider so listeners don’t climb the tree
   late GameMode _modeForSession;
 
   void _onDraw() {
@@ -61,17 +61,33 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
   }
 
   bool _awaitingRps = false; // block taps during RPS
-  bool _gameOver = false; // stop RPS after game ends
+  bool _gameOver = false; // stop RPS after game end
+
+  // state fields
+  Completer<RpsWinner>? _rpsCompleter;
+  int _rpsRound = 0; // increments every time we start a new RPS
+
+  // show the inline RPS and await a result
+  Future<RpsWinner> _showInlineRps() {
+    final c = Completer<RpsWinner>();
+    setState(() {
+      _awaitingRps =
+          true; // your Board is already wrapped in IgnorePointer(_awaitingRps)
+      _rpsRound++; // forces the bar to reset its internal UI
+    });
+    // store the completer like before if you want; or just return c
+    _rpsCompleter = c;
+    return c.future;
+  }
+
+  void _onInlineRpsDone(RpsWinner w) {
+    if (_rpsCompleter?.isCompleted == false) _rpsCompleter!.complete(w);
+    // keep the bar visible; only deactivate interaction
+    setState(() => _awaitingRps = false);
+  }
 
   Future<void> _runRpsAndDispatch(BoardState board) async {
-    if (!mounted || _gameOver) return;
-    if (_modeForSession != GameMode.vsAI) return;
-
-    setState(() => _awaitingRps = true);
-
-    final winner =
-        await showRpsOverlay(context); // context is fine for the dialog
-    if (!mounted || _gameOver) return;
+    final winner = await _showInlineRps(); // instead of showRpsDialog/overlay
 
     if (winner == RpsWinner.player) {
       board.unlockForPlayer();
@@ -79,10 +95,10 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
     } else if (winner == RpsWinner.ai) {
       await board.aiPlayOneMove();
       if (!mounted || _gameOver) return;
-      await Future.delayed(const Duration(milliseconds: 150));
-      _runRpsAndDispatch(board);
+      await Future.delayed(const Duration(milliseconds: 120));
+      _runRpsAndDispatch(board); // chain next round
     } else {
-      _runRpsAndDispatch(board);
+      _runRpsAndDispatch(board); // tie → show again
     }
   }
 
@@ -96,6 +112,9 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
     final GameMode selectedMode = (extra is Map && extra['mode'] is GameMode)
         ? extra['mode'] as GameMode
         : GameMode.vsAI;
+    final bool rpsInitiative = (extra is Map && extra['rps'] is bool)
+        ? extra['rps'] as bool
+        : true; // default RPS on for Vs AI
 
     return MultiProvider(
       providers: [
@@ -109,26 +128,41 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
 
             Future.delayed(const Duration(milliseconds: 500)).then((_) {
               if (!mounted) return;
-
-              // 1) Turn on external control before we begin the game loop.
-              state.externalTurnControl = true;
-
               // 2) Initialize the board.
               state.initialize();
 
+              // 1) Turn on external control before we begin the game loop.
+              state.externalTurnControl =
+                  (selectedMode == GameMode.vsAI) && rpsInitiative;
+
               // 3) After first frame, start the first RPS.
               if (selectedMode == GameMode.vsAI) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (!mounted) return;
-                  _runRpsAndDispatch(state);
-                });
+                // 🔹 RPS ON → start the RPS loop
+
+                if (rpsInitiative) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+                    _runRpsAndDispatch(state); // your existing loop
+                  });
+                } else {
+                  // 🔹 RPS OFF → classic flow:
+                  if (widget.level.setting.aiStarts) {
+                    // AI opens immediately
+                    state.aiPlayOneMove();
+                  } else {
+                    // Player starts
+                    state.unlockForPlayer();
+                  }
+                }
+              } else {
+                // Local PvP
+                state.unlockForPlayer();
               }
             });
 
-            // ⚠️ capture the mode only; do NOT read provider later inside listeners
+            // Capture the mode only; do NOT read provider later inside listeners
             _modeForSession = state.mode;
 
-            // it’s okay to wire here since we captured mode
             state.playerWon.addListener(_playerWon);
             state.aiOpponentWon.addListener(_aiOpponentWon);
             state.draw.addListener(_onDraw);
@@ -244,101 +278,108 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
                               ),
                             ),
                           ),
-                          actionsArea: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          actionsArea: Column(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Undo
-                              InkResponse(
-                                onTap: () {
-                                  final audio = context.read<AudioController>();
-                                  audio.playSfx(SfxType.buttonTap);
-                                  final state = context.read<BoardState>();
-                                  if (!state.canUndo) return;
-                                  // If you allow undo after win/lose, clear the stop-flag
-                                  setState(() {
-                                    _gameOver = false;
-                                  });
-                                  state.undoFullTurn();
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  // Undo
+                                  InkResponse(
+                                    onTap: () {
+                                      final audio =
+                                          context.read<AudioController>();
+                                      audio.playSfx(SfxType.buttonTap);
 
-                                  // In RPS/external control mode, lock the state and run RPS again
-                                  if (_modeForSession == GameMode.vsAI &&
-                                      state.externalTurnControl) {
-                                    setState(() => _awaitingRps =
-                                        true); // block taps while dialog shows
-                                    state
-                                        .lock(); // make sure user can't tap the state before RPS
+                                      final state = context.read<BoardState>();
 
-                                    // Kick RPS once the frame is ready
-                                    WidgetsBinding.instance
-                                        .addPostFrameCallback((_) {
-                                      if (!mounted) return;
-                                      _runRpsAndDispatch(state);
-                                    });
-                                  }
-                                },
-                                child: const Column(
-                                  children: [
-                                    Icon(Icons.undo,
-                                        size: 32, color: Colors.black),
-                                    SizedBox(height: 4),
-                                    Text('Undo',
-                                        style: TextStyle(
-                                            fontFamily: 'Permanent Marker',
-                                            fontSize: 14)),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 24),
-                              // Restart
-                              InkResponse(
-                                onTap: () {
-                                  final audio = context.read<AudioController>();
-                                  audio.playSfx(SfxType.buttonTap);
-                                  final board = context.read<
-                                      BoardState>(); // ok here; you're under provider
-                                  setState(() {
-                                    _gameOver = false;
-                                    _awaitingRps = false;
-                                  });
-                                  board.clearBoard();
-                                  board.externalTurnControl = true;
+                                      if (!state.canUndo) return;
+                                      // If you allow undo after win/lose, clear the stop-flag
+                                      setState(() {
+                                        _gameOver = false;
+                                      });
+                                      state.undoFullTurn();
 
-                                  _startOfPlay = DateTime.now();
-                                  Future.delayed(
-                                          const Duration(milliseconds: 200))
-                                      .then((_) {
-                                    if (!mounted) return;
-                                    board.initialize();
-
-                                    Future.delayed(
-                                            const Duration(milliseconds: 800))
-                                        .then((_) {
-                                      if (!mounted) return;
-                                      showHintSnackbar(context);
-                                    });
-
-                                    WidgetsBinding.instance
-                                        .addPostFrameCallback((_) {
-                                      if (!mounted) return;
-                                      if (_modeForSession == GameMode.vsAI) {
+                                      if (_modeForSession == GameMode.vsAI &&
+                                          rpsInitiative) {
                                         _runRpsAndDispatch(
-                                            board); // << pass it in
+                                            state); // only when RPS is on
                                       }
-                                    });
-                                  });
-                                },
-                                child: const Column(
-                                  children: [
-                                    Icon(Icons.refresh,
-                                        size: 32, color: Colors.black),
-                                    SizedBox(height: 4),
-                                    Text('Restart',
-                                        style: TextStyle(
-                                            fontFamily: 'Permanent Marker',
-                                            fontSize: 14)),
-                                  ],
-                                ),
+                                    },
+                                    child: const Column(
+                                      children: [
+                                        Icon(Icons.undo,
+                                            size: 32, color: Colors.black),
+                                        SizedBox(height: 4),
+                                        Text('Undo',
+                                            style: TextStyle(
+                                                fontFamily: 'Permanent Marker',
+                                                fontSize: 14)),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 24),
+                                  // Restart
+                                  InkResponse(
+                                    onTap: () {
+                                      final audio =
+                                          context.read<AudioController>();
+                                      audio.playSfx(SfxType.buttonTap);
+                                      final board = context.read<
+                                          BoardState>(); // ok here; you're under provider
+
+                                      setState(() {
+                                        _gameOver = false;
+                                        _awaitingRps = false;
+                                      });
+                                      board.clearBoard();
+                                      board.initialize();
+                                      // 🔹 Set turn control according to RPS
+                                      board.externalTurnControl = rpsInitiative;
+
+                                      _startOfPlay = DateTime.now();
+                                      if (_modeForSession == GameMode.vsAI) {
+                                        if (rpsInitiative) {
+                                          // start RPS flow
+                                          WidgetsBinding.instance
+                                              .addPostFrameCallback((_) {
+                                            if (!mounted) return;
+                                            _runRpsAndDispatch(board);
+                                          });
+                                        } else {
+                                          // classic opening
+                                          if (widget.level.setting.aiStarts) {
+                                            board.aiPlayOneMove();
+                                          } else {
+                                            board.unlockForPlayer();
+                                          }
+                                        }
+                                      }
+                                    },
+                                    child: const Column(
+                                      children: [
+                                        Icon(Icons.refresh,
+                                            size: 32, color: Colors.black),
+                                        SizedBox(height: 4),
+                                        Text('Restart',
+                                            style: TextStyle(
+                                                fontFamily: 'Permanent Marker',
+                                                fontSize: 14)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
+                              // Inline RPS bar (only for Vs AI + when RPS initiative is enabled)
+                              _modeForSession == GameMode.vsAI && rpsInitiative
+                                  ? RpsInlineBar(
+                                      key: ValueKey(_rpsRound),
+                                      active: !_gameOver &&
+                                          _awaitingRps, // board taps already blocked by _awaitingRps
+                                      idleText: 'Rock · Paper · Scissors!',
+                                      onResult: _onInlineRpsDone,
+                                    )
+                                  : const SizedBox.shrink(),
                             ],
                           ),
                         );
