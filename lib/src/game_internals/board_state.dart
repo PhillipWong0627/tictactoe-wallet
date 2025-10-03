@@ -37,6 +37,26 @@ class BoardState extends ChangeNotifier {
   Side _turn = Side.x; // whose turn in local PvP
   Side get turn => _turn;
 
+// Drive turns from the UI (RPS). When true, BoardState won’t auto-play AI.
+  bool externalTurnControl = false;
+
+// Move pings so the UI can react (e.g., start next RPS round)
+  final ChangeNotifier playerMoved = ChangeNotifier();
+  final ChangeNotifier aiMoved = ChangeNotifier();
+  void lock() {
+    if (!_isLocked) {
+      _isLocked = true;
+      notifyListeners();
+    }
+  }
+
+  void unlockForPlayer() {
+    if (_isLocked) {
+      _isLocked = false;
+      notifyListeners();
+    }
+  }
+
   void _recomputeLatestForSide(Side side) {
     // Walk history from the end to find latest tile for this side.
     for (var i = _history.length - 1; i >= 0; i--) {
@@ -62,7 +82,7 @@ class BoardState extends ChangeNotifier {
   BoardState.clean(
     BoardSetting setting,
     AiOpponent aiOpponent, {
-    GameMode mode = GameMode.vsAI, // 👈 default here
+    GameMode mode = GameMode.vsAI,
   }) : this._(setting, {}, {}, aiOpponent, null, null, mode);
 
   @visibleForTesting
@@ -73,7 +93,7 @@ class BoardState extends ChangeNotifier {
     required Set<int> takenByO,
     Tile? latestX,
     Tile? latestO,
-    GameMode mode = GameMode.vsAI, // 👈 default here too
+    GameMode mode = GameMode.vsAI,
   }) : this._(setting, takenByX, takenByO, aiOpponent, latestX, latestO, mode);
 
   BoardState._(
@@ -83,7 +103,7 @@ class BoardState extends ChangeNotifier {
     this.aiOpponent,
     this._latestXTile,
     this._latestOTile,
-    this.mode, // 👈 store it
+    this.mode,
   );
 
   /// This is `true` if the board game is locked for the player.
@@ -123,7 +143,7 @@ class BoardState extends ChangeNotifier {
     _winningLine?.clear();
     _latestXTile = null;
     _latestOTile = null;
-    _history.clear(); // <--- add this
+    _history.clear();
     _winningLine = null;
 
     _isLocked = true;
@@ -141,18 +161,10 @@ class BoardState extends ChangeNotifier {
     _latestOTile = null;
 
     if (mode == GameMode.localPvP) {
-      // Pass & Play: X starts, no AI auto-move.
       _turn = Side.x;
       _isLocked = false;
       notifyListeners();
-      return; // 👈 skip AI opening
-    }
-
-    if (setting.aiStarts) {
-      final center = Tile((setting.m / 2).floor(), (setting.n ~/ 2).floor());
-      _oTaken.add(center.toPointer(setting));
-      _latestOTile = center;
-      _history.add(PlacedMove(center, Side.o));
+      return;
     }
 
     _isLocked = false;
@@ -164,6 +176,8 @@ class BoardState extends ChangeNotifier {
     playerWon.dispose();
     aiOpponentWon.dispose();
     draw.dispose();
+    playerMoved.dispose();
+    aiMoved.dispose();
 
     super.dispose();
   }
@@ -282,7 +296,15 @@ class BoardState extends ChangeNotifier {
       return; // 👈 important: skip AI move
     }
 
-    // Time for AI to move.
+    /// Time for AI to move.
+    // RPS/external control: do NOT auto-play AI here.
+    // Keep board locked; the UI will call aiPlayOneMove() or unlockForPlayer().
+    if (externalTurnControl) {
+      playerMoved.notifyListeners(); // 👈 was: playerMoved.value = null
+      notifyListeners();
+      return;
+    }
+
     await Future.delayed(const Duration(milliseconds: 300));
     assert(_isLocked);
     assert(_hasOpenTiles, 'Somehow, tiles got taken while waiting for AI turn');
@@ -306,6 +328,33 @@ class BoardState extends ChangeNotifier {
 
     // Play continues.
     _isLocked = false;
+    notifyListeners();
+  }
+
+  Future<void> aiPlayOneMove() async {
+    if (mode != GameMode.vsAI) return;
+    if (!_hasOpenTiles) return;
+
+    // tiny beat for UX parity
+    await Future.delayed(const Duration(milliseconds: 200));
+
+    final aiTile = aiOpponent.chooseNextMove(this);
+    _takeTile(aiTile, setting.aiOpponentSide);
+    _history.add(PlacedMove(aiTile, setting.aiOpponentSide));
+
+    if (_getWinner() == setting.aiOpponentSide) {
+      aiOpponentWon.notifyListeners();
+      notifyListeners();
+      return;
+    }
+    if (!_hasOpenTiles) {
+      draw.notifyListeners();
+      notifyListeners();
+      return;
+    }
+
+    // Keep board locked; UI will start the next RPS round.
+    aiMoved.notifyListeners(); // 👈 was: aiMoved.value = null
     notifyListeners();
   }
 

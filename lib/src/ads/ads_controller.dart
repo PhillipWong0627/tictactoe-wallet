@@ -1,10 +1,8 @@
 import 'dart:developer';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:tictactoe/src/ads/ad_ids.dart';
 import 'package:tictactoe/src/ads/ad_ids.dart';
 
 import 'preloaded_banner_ad.dart';
@@ -27,7 +25,6 @@ class AdsController {
   }
 
   void loadInterstitialAd({VoidCallback? onClose}) {
-    if (_busy) return; // Guard against spam
     if (_busy) return; // Guard against spam
     _busy = true;
     InterstitialAd.load(
