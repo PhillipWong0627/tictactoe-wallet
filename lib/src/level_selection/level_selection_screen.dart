@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:tictactoe/src/ads/ads_controller.dart';
+import 'package:tictactoe/src/rps/initiative_picker.dart';
 import 'package:tictactoe/src/style/dialog/dialog.dart';
 
 import '../audio/sounds.dart';
@@ -76,25 +77,30 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen> {
             ),
             const SizedBox(height: 12),
 
-            // ===== Initiative toggle (ONLY when Vs AI) =====
-            if (_mode == GameMode.vsAI)
+            if (_mode == GameMode.vsAI) ...[
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('Style:'),
-                  const SizedBox(width: 10),
-                  SegmentedButton<bool>(
-                    segments: const [
-                      ButtonSegment(value: true, label: Text('RPS')),
-                      ButtonSegment(value: false, label: Text('Classic')),
-                    ],
-                    selected: {_rpsInitiative},
-                    onSelectionChanged: (s) {
-                      setState(() => _rpsInitiative = s.first);
+                  const SizedBox(height: 12), // LevelSelectionScreen
+                  const Text('Style :'),
+                  TextButton.icon(
+                    label: Text(
+                      _rpsInitiative ? '✊📄✂ Rock Paper Scissor' : '▶️ Classic',
+                      style: const TextStyle(
+                          fontFamily: 'Permanent Marker', fontSize: 16),
+                    ),
+                    onPressed: () async {
+                      final picked = await showInitiativeBottomSheet(context,
+                          initialRps: _rpsInitiative);
+                      if (picked != null) {
+                        setState(() => _rpsInitiative =
+                            picked); // <-- triggers reactive label update
+                      }
                     },
                   ),
                 ],
               ),
+            ],
             const SizedBox(height: 50),
 
             // ===== Grid of numbers =====
