@@ -478,4 +478,4 @@ enum Side {
   none,
 }
 
-enum GameMode { vsAI, localPvP }
+enum GameMode { vsAI, localPvP, vsRPS }

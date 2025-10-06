@@ -24,7 +24,6 @@ class LevelSelectionScreen extends StatefulWidget {
 
 class _LevelSelectionScreenState extends State<LevelSelectionScreen> {
   GameMode _mode = GameMode.vsAI; // default
-  bool _rpsInitiative = true; // default: RPS ON for Vs AI
 
   @override
   Widget build(BuildContext context) {
@@ -68,6 +67,11 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen> {
                     label: Text('Vs Player'),
                     icon: Icon(Icons.people_outline),
                   ),
+                  ButtonSegment(
+                    value: GameMode.vsRPS,
+                    label: Text('Vs RPS'),
+                    icon: Icon(Icons.handshake_outlined),
+                  ),
                 ],
                 selected: {_mode},
                 onSelectionChanged: (s) {
@@ -77,30 +81,6 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen> {
             ),
             const SizedBox(height: 12),
 
-            if (_mode == GameMode.vsAI) ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 12), // LevelSelectionScreen
-                  const Text('Style :'),
-                  TextButton.icon(
-                    label: Text(
-                      _rpsInitiative ? '✊📄✂ Rock Paper Scissor' : '▶️ Classic',
-                      style: const TextStyle(
-                          fontFamily: 'Permanent Marker', fontSize: 16),
-                    ),
-                    onPressed: () async {
-                      final picked = await showInitiativeBottomSheet(context,
-                          initialRps: _rpsInitiative);
-                      if (picked != null) {
-                        setState(() => _rpsInitiative =
-                            picked); // <-- triggers reactive label update
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ],
             const SizedBox(height: 50),
 
             // ===== Grid of numbers =====
@@ -119,7 +99,9 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen> {
                                   aspectRatio: 1,
                                   child: _LevelButton(y * 3 + x + 1,
                                       mode: _mode,
-                                      rpsInitiative: _rpsInitiative),
+                                      rpsInitiative: _mode == GameMode.vsRPS
+                                          ? true
+                                          : false),
                                 ),
                             ],
                           ),
@@ -161,15 +143,17 @@ class _LevelButton extends StatelessWidget {
     final playerProgress = context.watch<PlayerProgress>();
     final palette = context.watch<Palette>();
     final bool isPvP = mode == GameMode.localPvP;
+    final bool isRPS = mode == GameMode.vsRPS;
 
     /// Level is either one that the player has already bested, or one above.
     // In PvP: every level is available, no ads, no locks.
-    final bool available =
-        isPvP ? true : playerProgress.highestLevelReached + 1 >= number;
+    final bool available = isPvP || isRPS
+        ? true
+        : playerProgress.highestLevelReached + 1 >= number;
 
     /// Allow skipping one level via ad.
     // In PvP: never show "watch ad to skip".
-    final bool availableWithSkip = isPvP
+    final bool availableWithSkip = isPvP || isRPS
         ? false
         : (!available && playerProgress.highestLevelReached + 2 >= number);
 
@@ -178,11 +162,13 @@ class _LevelButton extends StatelessWidget {
       child: RoughButton(
         onTap: () async {
           final controller = context.read<AdsController?>();
+          final bool isRPS;
+          isRPS = mode == GameMode.vsRPS ? true : false;
 
           if (available) {
             GoRouter.of(context).push(
               '/play/session/$number',
-              extra: {'mode': mode, 'rps': rpsInitiative},
+              extra: {'mode': mode, 'rps': isRPS},
             );
           } else if (availableWithSkip) {
             // Confirm before showing ad to attempt the level
@@ -198,7 +184,7 @@ class _LevelButton extends StatelessWidget {
               controller?.loadInterstitialAd(onClose: () {
                 GoRouter.of(context).push(
                   '/play/session/$number',
-                  extra: {'mode': mode, 'rps': rpsInitiative},
+                  extra: {'mode': mode, 'rps': isRPS},
                 );
               });
             }

@@ -51,6 +51,7 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
 
   // Captured once under provider so listeners don’t climb the tree
   late GameMode _modeForSession;
+  late bool _isRpsVariant; // true when this session is the RPS
 
   void _onDraw() {
     if (!mounted) return;
@@ -106,15 +107,26 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsController>();
     final palette = context.watch<Palette>();
-
     // read mode from route
     final extra = GoRouterState.of(context).extra;
-    final GameMode selectedMode = (extra is Map && extra['mode'] is GameMode)
+
+    // rawMode may be vsAI / localPvP / vsRPS (from level selection UI)
+    final GameMode rawMode = (extra is Map && extra['mode'] is GameMode)
         ? extra['mode'] as GameMode
         : GameMode.vsAI;
-    final bool rpsInitiative = (extra is Map && extra['rps'] is bool)
-        ? extra['rps'] as bool
-        : true; // default RPS on for Vs AI
+
+    // if someone passed a boolean ‘rps’, respect it too
+    final bool rpsFromExtra = (extra is Map && extra['rps'] == true);
+
+    // this session is the RPS flavor if either:
+    // - the raw mode is vsRPS, or
+    // - someone explicitly passed {rps: true}
+    final bool isRpsVariant = rpsFromExtra || rawMode == GameMode.vsRPS;
+
+    // BoardState only understands vsAI/localPvP.
+    // Map vsRPS → vsAI for the engine.
+    final GameMode boardMode =
+        (rawMode == GameMode.localPvP) ? GameMode.localPvP : GameMode.vsAI;
 
     return MultiProvider(
       providers: [
@@ -123,8 +135,11 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
             final state = BoardState.clean(
               widget.level.setting,
               opponent,
-              mode: selectedMode,
+              mode: boardMode,
             );
+            // capture for the whole session
+            _modeForSession = state.mode; // vsAI or localPvP
+            _isRpsVariant = isRpsVariant; // true when using RPS initiative
 
             Future.delayed(const Duration(milliseconds: 500)).then((_) {
               if (!mounted) return;
@@ -133,13 +148,13 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
 
               // 1) Turn on external control before we begin the game loop.
               state.externalTurnControl =
-                  (selectedMode == GameMode.vsAI) && rpsInitiative;
+                  (_modeForSession == GameMode.vsAI) && _isRpsVariant;
 
               // 3) After first frame, start the first RPS.
-              if (selectedMode == GameMode.vsAI) {
+              if (_modeForSession == GameMode.vsAI) {
                 // 🔹 RPS ON → start the RPS loop
 
-                if (rpsInitiative) {
+                if (_isRpsVariant) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     if (!mounted) return;
                     _runRpsAndDispatch(state); // your existing loop
@@ -170,6 +185,7 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
               if (!mounted || _gameOver || _modeForSession != GameMode.vsAI) {
                 return;
               }
+              if (_isRpsVariant) _runRpsAndDispatch(state);
               _runRpsAndDispatch(state);
             });
 
@@ -301,7 +317,7 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
                                       state.undoFullTurn();
 
                                       if (_modeForSession == GameMode.vsAI &&
-                                          rpsInitiative) {
+                                          _isRpsVariant) {
                                         _runRpsAndDispatch(
                                             state); // only when RPS is on
                                       }
@@ -335,11 +351,11 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
                                       board.clearBoard();
                                       board.initialize();
                                       // 🔹 Set turn control according to RPS
-                                      board.externalTurnControl = rpsInitiative;
+                                      board.externalTurnControl = _isRpsVariant;
 
                                       _startOfPlay = DateTime.now();
                                       if (_modeForSession == GameMode.vsAI) {
-                                        if (rpsInitiative) {
+                                        if (_isRpsVariant) {
                                           // start RPS flow
                                           WidgetsBinding.instance
                                               .addPostFrameCallback((_) {
@@ -371,7 +387,7 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
                                 ],
                               ),
                               // Inline RPS bar (only for Vs AI + when RPS initiative is enabled)
-                              _modeForSession == GameMode.vsAI && rpsInitiative
+                              _modeForSession == GameMode.vsAI && _isRpsVariant
                                   ? RpsInlineBar(
                                       key: ValueKey(_rpsRound),
                                       active: !_gameOver &&
@@ -439,9 +455,6 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
       DateTime.now().difference(_startOfPlay),
     );
 
-    final playerProgress = context.read<PlayerProgress>();
-    playerProgress.setLevelReached(widget.level.number);
-
     await Future<void>.delayed(_preCelebrationDuration);
     if (!mounted) return;
 
@@ -450,15 +463,27 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
     final audioController = context.read<AudioController>();
     audioController.playSfx(SfxType.congrats);
 
-    final gamesServicesController = context.read<GamesServicesController?>();
-    if (gamesServicesController != null) {
-      if (widget.level.awardsAchievement) {
-        gamesServicesController.awardAchievement(
-          android: widget.level.achievementIdAndroid!,
-          iOS: widget.level.achievementIdIOS!,
-        );
+    // Only count progress/leaderboard if NOT in RPS variant
+    if (!_isRpsVariant) {
+      context.read<PlayerProgress>().setLevelReached(widget.level.number);
+
+      final gamesServicesController = context.read<GamesServicesController?>();
+      if (gamesServicesController != null) {
+        if (widget.level.awardsAchievement) {
+          gamesServicesController.awardAchievement(
+            android: widget.level.achievementIdAndroid!,
+            iOS: widget.level.achievementIdIOS!,
+          );
+        }
+
+        gamesServicesController.submitLeaderboardScore(score);
       }
-      gamesServicesController.submitLeaderboardScore(score);
+    } else {
+      //  Vs RPS: fun mode — no progress, no leaderboard
+      await Future.delayed(_celebrationDuration);
+      if (!mounted) return;
+      GoRouter.of(context).pop(); // just go back to level select
+      showSnackBar("You won! But RPS mode doesn’t count toward progress 🎲");
     }
 
     await Future.delayed(_celebrationDuration);
