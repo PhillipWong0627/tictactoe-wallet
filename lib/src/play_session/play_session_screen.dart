@@ -181,6 +181,14 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
                       children: [
                         // UNDO (Watch Ads)
                         AdGatedAction(
+                          enabled: context
+                              .select<BoardState, bool>((s) => s.canUndo),
+                          isAvailable: (ctx) =>
+                              ctx.read<BoardState>().canUndo, // runtime guard
+                          onUnavailable: () {
+                            showSnackBar("There is no previous move.");
+                          },
+
                           requireConfirm: true,
                           onConfirm: (ctx) => showConfirmProceedDialog(
                             ctx,

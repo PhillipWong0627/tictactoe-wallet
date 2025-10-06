@@ -82,7 +82,7 @@ class _WinGameScreenState extends State<WinGameScreen> {
             // 30% chance to show an interstitial, else just pop
             const p = 0.30;
             final roll = _rng.nextDouble(); // ← sample once
-            developer.log('interstitial roll=$roll (p=$p)');
+            developer.log('interstitial percentage=$roll (p=$p)');
 
             // Show interstitial only if roll < p
             if (roll < p) {

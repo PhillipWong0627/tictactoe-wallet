@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tictactoe/src/ads/ads_controller.dart';
@@ -5,7 +7,14 @@ import 'package:tictactoe/src/style/dialog/dialog.dart'; // <-- for showConfirmP
 
 class AdGatedAction extends StatelessWidget {
   final Widget child;
-  final Future<bool> Function(BuildContext context)? onConfirm; // optional
+
+  final bool enabled;
+
+  /// Final check right before confirm/ad; returns true if the action can run now.
+  final FutureOr<bool> Function(BuildContext context)? isAvailable;
+
+  final VoidCallback? onUnavailable;
+  final Future<bool> Function(BuildContext context)? onConfirm;
   final VoidCallback onAllowed;
   final VoidCallback? onCancelled;
   final bool requireConfirm;
@@ -14,14 +23,23 @@ class AdGatedAction extends StatelessWidget {
     super.key,
     required this.child,
     required this.onAllowed,
-    this.onCancelled,
+    this.enabled = true,
+    this.isAvailable,
+    this.onUnavailable,
     this.onConfirm,
+    this.onCancelled,
     this.requireConfirm = true,
   });
 
   Future<void> _run(BuildContext context) async {
+    if (isAvailable != null) {
+      final ok = await Future.value(isAvailable!(context));
+      if (!ok) {
+        onUnavailable?.call();
+        return;
+      }
+    }
     if (requireConfirm) {
-      // Prefer custom confirm if provided; otherwise use your shared dialog
       final ok = await (onConfirm?.call(context) ??
           showConfirmProceedDialog(
             context,
@@ -47,6 +65,8 @@ class AdGatedAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(onTap: () => _run(context), child: child);
+    return Opacity(
+        opacity: enabled ? 1.0 : 0.5,
+        child: InkWell(onTap: () => _run(context), child: child));
   }
 }
