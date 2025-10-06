@@ -52,7 +52,6 @@ class BannerAdWidget extends StatefulWidget {
 class _BannerAdWidgetState extends State<BannerAdWidget> {
   static final _log = Logger('BannerAdWidget');
 
-  static const useAnchoredAdaptiveSize = false;
   BannerAd? _bannerAd;
   _LoadingState _adLoadingState = _LoadingState.initial;
 
@@ -133,22 +132,6 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
     // AdSize size;
     AdSize size = widget.fallbackSize;
 
-    // if (useAnchoredAdaptiveSize) {
-    //   final AnchoredAdaptiveBannerAdSize? adaptiveSize =
-    //       await AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
-    //           MediaQuery.of(context).size.width.truncate());
-
-    //   if (adaptiveSize == null) {
-    //     _log.warning('Unable to get height of anchored banner.');
-    //     size = AdSize.banner;
-    //   } else {
-    //     _log.info('normal anchored banner.');
-
-    //     size = adaptiveSize;
-    //   }
-    // } else {
-    //   size = AdSize.mediumRectangle;
-    // }
     if (widget.useAdaptive) {
       // Compute available width (subtract padding if your layout has it).
       final screenWidth = MediaQuery.of(context).size.width;
