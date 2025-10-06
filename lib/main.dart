@@ -15,7 +15,6 @@ import 'firebase_options.dart';
 import 'src/ads/ads_controller.dart';
 import 'src/audio/audio_controller.dart';
 import 'src/crashlytics/crashlytics.dart';
-import 'src/games_services/games_services.dart';
 import 'src/games_services/score.dart';
 import 'src/level_selection/level_selection_screen.dart';
 import 'src/level_selection/levels.dart';
@@ -91,13 +90,6 @@ Future<void> main() async {
     await MobileAds.instance.initialize();
     adsController = AdsController(MobileAds.instance)..initialize();
   }
-
-  // GamesServicesController? gamesServicesController;
-  // if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) {
-  //   gamesServicesController = GamesServicesController()
-  //     // Attempt to log the player in.
-  //     ..initialize();
-  // }
 
   runApp(
     MyApp(

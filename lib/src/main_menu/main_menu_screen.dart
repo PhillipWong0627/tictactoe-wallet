@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../audio/sounds.dart';
-import '../games_services/games_services.dart';
 import '../settings/settings.dart';
 import '../style/palette.dart';
 import '../style/responsive_screen.dart';
@@ -16,7 +15,6 @@ class MainMenuScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.watch<Palette>();
-    final gamesServicesController = context.watch<GamesServicesController?>();
     final settingsController = context.watch<SettingsController>();
 
     return Scaffold(
@@ -51,30 +49,6 @@ class MainMenuScreen extends StatelessWidget {
                 child: const Text('Play'),
               ),
             ),
-            // if (gamesServicesController != null) ...[
-            //   _hideUntilReady(
-            //     ready: gamesServicesController.signedIn,
-            //     // TODO: show an "active" animation on the button
-            //     child: DelayedAppear(
-            //       ms: 600,
-            //       child: RoughButton(
-            //         onTap: () => gamesServicesController.showAchievements(),
-            //         child: const Text('Achievements'),
-            //       ),
-            //     ),
-            //   ),
-            //   _hideUntilReady(
-            //     // TODO: show an "active" animation on the button
-            //     ready: gamesServicesController.signedIn,
-            //     child: DelayedAppear(
-            //       ms: 400,
-            //       child: RoughButton(
-            //         onTap: () => gamesServicesController.showLeaderboard(),
-            //         child: const Text('Leaderboard'),
-            //       ),
-            //     ),
-            //   ),
-            // ],
             DelayedAppear(
               ms: 200,
               child: RoughButton(

@@ -17,7 +17,6 @@ import '../ai/ai_opponent.dart';
 import '../audio/audio_controller.dart';
 import '../audio/sounds.dart';
 import '../game_internals/board_state.dart';
-import '../games_services/games_services.dart';
 import '../games_services/score.dart';
 import '../level_selection/levels.dart';
 import '../player_progress/player_progress.dart';
@@ -359,20 +358,6 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
 
     final audioController = context.read<AudioController>();
     audioController.playSfx(SfxType.congrats);
-
-    final gamesServicesController = context.read<GamesServicesController?>();
-    if (gamesServicesController != null) {
-      // Award achievement.
-      if (widget.level.awardsAchievement) {
-        gamesServicesController.awardAchievement(
-          android: widget.level.achievementIdAndroid!,
-          iOS: widget.level.achievementIdIOS!,
-        );
-      }
-
-      // Send score to leaderboard.
-      gamesServicesController.submitLeaderboardScore(score);
-    }
 
     /// Give the player some time to see the celebration animation.
     await Future.delayed(_celebrationDuration);
