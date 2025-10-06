@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:logging/logging.dart' hide Level;
 import 'package:provider/provider.dart';
+import 'package:tictactoe/gen/assets.gen.dart';
 import 'package:tictactoe/src/ads/banner_ad_widget.dart';
 import 'package:tictactoe/src/play_session/taunt_manager.dart';
 import 'package:tictactoe/src/style/dialog/dialog.dart';
@@ -156,7 +157,9 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
                         },
                         child: Tooltip(
                           message: 'Back',
-                          child: Image.asset('assets/images/back.png'),
+                          child: Assets.images.back.image(
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                     ),
@@ -171,7 +174,7 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
                         },
                         child: Tooltip(
                           message: 'Settings',
-                          child: Image.asset('assets/images/settings.png'),
+                          child: Assets.images.settings.image(),
                         ),
                       ),
                     ),
@@ -364,91 +367,6 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
     if (!mounted) return;
 
     GoRouter.of(context).go('/play/won', extra: {'score': score});
-  }
-}
-
-class _RestartButton extends StatefulWidget {
-  final Stream<void> resetHint;
-
-  final VoidCallback onTap;
-
-  const _RestartButton(this.resetHint, {required this.onTap});
-
-  @override
-  State<_RestartButton> createState() => _RestartButtonState();
-}
-
-class _RestartButtonState extends State<_RestartButton>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    duration: const Duration(milliseconds: 1500),
-    vsync: this,
-  );
-
-  StreamSubscription? _subscription;
-
-  static final TweenSequence<double> _bump = TweenSequence([
-    // A bit of delay.
-    TweenSequenceItem(tween: Tween(begin: 1, end: 1), weight: 10),
-    // Enlarge.
-    TweenSequenceItem(
-        tween: Tween(begin: 1.0, end: 1.4)
-            .chain(CurveTween(curve: Curves.easeOutCubic)),
-        weight: 1),
-    // Slowly go back to beginning.
-    TweenSequenceItem(
-        tween: Tween(begin: 1.4, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeInCubic)),
-        weight: 3),
-  ]);
-
-  @override
-  void initState() {
-    super.initState();
-    _subscription = widget.resetHint.listen(_handleResetHint);
-  }
-
-  @override
-  void didUpdateWidget(covariant _RestartButton oldWidget) {
-    _subscription?.cancel();
-    _subscription = widget.resetHint.listen(_handleResetHint);
-    super.didUpdateWidget(oldWidget);
-  }
-
-  @override
-  void dispose() {
-    _subscription?.cancel();
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return DelayedAppear(
-      ms: ScreenDelays.fourth,
-      child: InkResponse(
-        onTap: widget.onTap,
-        child: Column(
-          children: [
-            ScaleTransition(
-              scale: _bump.animate(_controller),
-              child: Image.asset('assets/images/restart.png'),
-            ),
-            const Text(
-              'Restart',
-              style: TextStyle(
-                fontFamily: 'Permanent Marker',
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _handleResetHint(void _) {
-    _controller.forward(from: 0);
   }
 }
 

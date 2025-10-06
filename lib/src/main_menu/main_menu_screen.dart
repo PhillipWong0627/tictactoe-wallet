@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:tictactoe/gen/assets.gen.dart';
 
 import '../audio/sounds.dart';
 import '../settings/settings.dart';
@@ -25,12 +26,10 @@ class MainMenuScreen extends StatelessWidget {
           ms: 1000,
           child: Center(
             child: Transform.scale(
-              scale: 1.2,
-              child: Image.asset(
-                'assets/images/main-menu.png',
-                fit: BoxFit.cover,
-              ),
-            ),
+                scale: 1.2,
+                child: Assets.images.mainMenu.image(
+                  fit: BoxFit.cover,
+                )),
           ),
         ),
         rectangularMenuArea: Column(

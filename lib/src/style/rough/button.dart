@@ -1,7 +1,6 @@
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tictactoe/gen/assets.gen.dart';
 import 'package:tictactoe/src/audio/audio_controller.dart';
 import 'package:tictactoe/src/audio/sounds.dart';
 import 'package:tictactoe/src/style/palette.dart';
@@ -141,7 +140,7 @@ class _RoughButtonState extends State<RoughButton>
             child: Stack(
               alignment: AlignmentDirectional.center,
               children: [
-                if (widget.drawRectangle) Image.asset('assets/images/bar.png'),
+                if (widget.drawRectangle) Assets.images.bar.image(),
                 DefaultTextStyle(
                   style: TextStyle(
                     fontFamily: 'Permanent Marker',

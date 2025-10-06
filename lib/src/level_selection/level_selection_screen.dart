@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:tictactoe/src/ads/ads_controller.dart';
+import 'package:tictactoe/src/level_selection/levels.dart';
 import 'package:tictactoe/src/style/dialog/dialog.dart';
 import 'package:tictactoe/src/widget/ads/watch_ad_badge.dart';
 
@@ -137,8 +138,7 @@ class _LevelButton extends StatelessWidget {
               children: [
                 Padding(
                   padding: const EdgeInsets.all(8),
-                  child: Image.asset(
-                    'assets/images/$number.png',
+                  child: levelImages[number]!.image(
                     semanticLabel: 'Level $number',
                     fit: BoxFit.cover,
                     color: available

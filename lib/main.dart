@@ -219,23 +219,22 @@ class MyApp extends StatelessWidget {
         ],
         child: Builder(builder: (context) {
           final palette = context.watch<Palette>();
+          final scheme = ColorScheme.fromSeed(
+            seedColor: palette.darkPen,
+            surface: palette.backgroundMain,
+          );
 
           return MaterialApp.router(
             title: 'Flutter Demo',
-            theme: ThemeData.from(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: palette.darkPen,
-                background: palette.backgroundMain,
-              ),
-              textTheme: TextTheme(
-                bodyMedium: TextStyle(
-                  color: palette.ink,
-                ),
+            theme: ThemeData(
+              useMaterial3: true,
+              colorScheme: scheme,
+              textTheme: TextTheme().apply(
+                bodyColor: palette.ink,
+                displayColor: palette.ink,
               ),
             ),
-            routeInformationProvider: _router.routeInformationProvider,
-            routeInformationParser: _router.routeInformationParser,
-            routerDelegate: _router.routerDelegate,
+            routerConfig: _router,
             scaffoldMessengerKey: scaffoldMessengerKey,
           );
         }),

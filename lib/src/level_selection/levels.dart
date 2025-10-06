@@ -1,3 +1,5 @@
+import 'package:tictactoe/gen/assets.gen.dart';
+
 import '../ai/ai_opponent.dart';
 import '../ai/humanlike_opponent.dart';
 import '../ai/random_opponent.dart';
@@ -32,7 +34,7 @@ final gameLevels = [
   ),
   GameLevel(
     number: 3,
-    setting: const BoardSetting(6, 6, 4),
+    setting: const BoardSetting(6, 6, 4, aiStarts: true),
     difficulty: 3,
     aiOpponentBuilder: (setting) => HumanlikeOpponent(
       setting,
@@ -142,3 +144,16 @@ class GameLevel {
             'Either both iOS and Android achievement ID must be provided, '
             'or none');
 }
+
+// Map linking level number → asset
+final levelImages = <int, AssetGenImage>{
+  1: Assets.images.a1,
+  2: Assets.images.a2,
+  3: Assets.images.a3,
+  4: Assets.images.a4,
+  5: Assets.images.a5,
+  6: Assets.images.a6,
+  7: Assets.images.a7,
+  8: Assets.images.a8,
+  9: Assets.images.a9,
+};
