@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:tictactoe/src/style/dialog/dialog.dart';
-import 'package:tictactoe/src/style/snack_bar.dart';
-
-import '../player_progress/player_progress.dart';
 import '../style/palette.dart';
 import '../style/responsive_screen.dart';
 import '../style/rough/button.dart';
@@ -56,31 +52,6 @@ class SettingsScreen extends StatelessWidget {
                 onSelected: () => settings.toggleMusicOn(),
               ),
             ),
-            // Consumer<InAppPurchaseController?>(
-            //     builder: (context, inAppPurchase, child) {
-            //   if (inAppPurchase == null) {
-            //     // In-app purchases are not supported yet.
-            //     return const SizedBox.shrink();
-            //   }
-
-            //   Widget icon;
-            //   VoidCallback? callback;
-            //   if (inAppPurchase.adRemoval.active) {
-            //     icon = const Icon(Icons.check);
-            //   } else if (inAppPurchase.adRemoval.pending) {
-            //     icon = const CircularProgressIndicator();
-            //   } else {
-            //     icon = const Icon(Icons.ad_units);
-            //     callback = () {
-            //       inAppPurchase.buy();
-            //     };
-            //   }
-            //   return _SettingsLine(
-            //     'Remove ads',
-            //     icon,
-            //     onSelected: callback,
-            //   );
-            // }),
             // _SettingsLine(
             //   'Reset progress',
             //   const Icon(Icons.delete),
@@ -95,7 +66,7 @@ class SettingsScreen extends StatelessWidget {
             //     );
             //     if (ok) {
             //       context.read<PlayerProgress>().reset();
-            //       showSnackBar("Player progress has been reset.");
+            //       showSuccessSnack("Player progress has been reset.");
             //     }
             //   },
             // ),

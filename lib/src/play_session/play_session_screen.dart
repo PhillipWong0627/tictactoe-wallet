@@ -62,7 +62,7 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
     audio.playSfx(SfxType.buttonTap);
 
     _resetHint.add(null); // bump the Restart button
-    showSnackBar("It's a draw - try again !");
+    showInfoSnack("It's a draw - try again !");
   }
 
   @override
@@ -188,7 +188,7 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
                           isAvailable: (ctx) =>
                               ctx.read<BoardState>().canUndo, // runtime guard
                           onUnavailable: () {
-                            showSnackBar("There is no previous move.");
+                            showWarningSnack("There is no previous move.");
                           },
 
                           requireConfirm: true,
@@ -336,7 +336,7 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
     if (!mounted) return;
 
     if (msg != null) {
-      showSnackBar(msg);
+      showInfoSnack(msg);
     }
   }
 
