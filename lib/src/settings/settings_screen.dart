@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:tictactoe/src/style/spacing.dart';
 import '../style/palette.dart';
 import '../style/responsive_screen.dart';
 import '../style/rough/button.dart';
@@ -9,8 +10,6 @@ import 'settings.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
-
-  static const _gap = SizedBox(height: 60);
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +21,7 @@ class SettingsScreen extends StatelessWidget {
       body: ResponsiveScreen(
         squarishMainArea: ListView(
           children: [
-            _gap,
+            Gaps.xl,
             const Text(
               'Settings',
               textAlign: TextAlign.center,
@@ -32,7 +31,8 @@ class SettingsScreen extends StatelessWidget {
                 height: 1,
               ),
             ),
-            _gap,
+            Gaps.xl,
+
             const _NameChangeLine(
               'Name',
             ),
@@ -74,7 +74,7 @@ class SettingsScreen extends StatelessWidget {
               padding: EdgeInsets.symmetric(vertical: 20, horizontal: 8),
               child: Text('Music by Mr Smith, used with permission.'),
             ),
-            _gap,
+            Gaps.xl,
           ],
         ),
         rectangularMenuArea: RoughButton(

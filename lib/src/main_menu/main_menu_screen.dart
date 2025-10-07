@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:tictactoe/gen/assets.gen.dart';
+import 'package:tictactoe/src/style/spacing.dart';
 
 import '../audio/sounds.dart';
 import '../settings/settings.dart';
@@ -70,9 +71,9 @@ class MainMenuScreen extends StatelessWidget {
                 },
               ),
             ),
-            _gap,
+            Gaps.sm,
             const Text('Music by Mr Smith'),
-            _gap,
+            Gaps.sm,
           ],
         ),
       ),
@@ -97,6 +98,4 @@ class MainMenuScreen extends StatelessWidget {
       },
     );
   }
-
-  static const _gap = SizedBox(height: 10);
 }
