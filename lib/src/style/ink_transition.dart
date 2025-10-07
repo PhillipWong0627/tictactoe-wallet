@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:logging/logging.dart';
 
 import 'sprite.dart';
 
@@ -52,8 +51,6 @@ class _InkReveal extends StatefulWidget {
 }
 
 class _InkRevealState extends State<_InkReveal> {
-  static final _log = Logger('_InkRevealState');
-
   bool _finished = false;
 
   @override
@@ -102,7 +99,8 @@ class _InkRevealState extends State<_InkReveal> {
   }
 
   void _statusListener(AnimationStatus status) {
-    _log.fine(() => 'status: $status');
+    debugPrint('[FINE] status: $status');
+
     switch (status) {
       case AnimationStatus.completed:
         setState(() {

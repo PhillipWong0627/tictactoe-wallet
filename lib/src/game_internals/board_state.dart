@@ -1,13 +1,10 @@
 import 'package:flutter/foundation.dart';
-import 'package:logging/logging.dart';
 import 'package:tictactoe/src/ai/ai_opponent.dart';
 import 'package:tictactoe/src/game_internals/board_setting.dart';
 import 'package:tictactoe/src/game_internals/placed_move.dart';
 import 'package:tictactoe/src/game_internals/tile.dart';
 
 class BoardState extends ChangeNotifier {
-  static final Logger _log = Logger('BoardState');
-
   final BoardSetting setting;
 
   final AiOpponent aiOpponent;
@@ -222,7 +219,8 @@ class BoardState extends ChangeNotifier {
 
   /// Take [tile] with player's token.
   void take(Tile tile) async {
-    _log.info(() => 'taking $tile');
+    debugPrint('Info: taking $tile');
+
     assert(canTake(tile));
     assert(!_isLocked);
 

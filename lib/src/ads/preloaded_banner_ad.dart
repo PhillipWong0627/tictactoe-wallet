@@ -1,12 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:logging/logging.dart';
 
 class PreloadedBannerAd {
-  static final _log = Logger('PreloadedBannerAd');
-
   /// Something like [AdSize.mediumRectangle].
   final AdSize size;
 
@@ -40,19 +38,21 @@ class PreloadedBannerAd {
       request: _adRequest,
       listener: BannerAdListener(
         onAdLoaded: (ad) {
-          _log.info(() => 'Ad loaded: ${_bannerAd.hashCode}');
+          debugPrint('[INFO] Ad loaded: ${_bannerAd.hashCode}');
+
           _adCompleter.complete(_bannerAd);
         },
         onAdFailedToLoad: (ad, error) {
-          _log.warning('Banner failedToLoad: $error');
+          debugPrint('[WARNING] Banner failedToLoad: $error');
+
           _adCompleter.completeError(error);
           ad.dispose();
         },
         onAdImpression: (ad) {
-          _log.info('Ad impression registered');
+          debugPrint('[INFO] Ad impression registered');
         },
         onAdClicked: (ad) {
-          _log.info('Ad click registered');
+          debugPrint('[INFO] Ad click registered');
         },
       ),
     );
@@ -61,7 +61,8 @@ class PreloadedBannerAd {
   }
 
   void dispose() {
-    _log.info('preloaded banner ad being disposed');
+    debugPrint('[INFO] preloaded banner ad being disposed');
+
     _bannerAd?.dispose();
   }
 }

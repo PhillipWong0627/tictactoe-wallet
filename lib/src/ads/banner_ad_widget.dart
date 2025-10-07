@@ -3,7 +3,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
 import 'package:tictactoe/src/ads/ad_ids.dart';
 
@@ -50,8 +49,6 @@ class BannerAdWidget extends StatefulWidget {
 }
 
 class _BannerAdWidgetState extends State<BannerAdWidget> {
-  static final _log = Logger('BannerAdWidget');
-
   BannerAd? _bannerAd;
   _LoadingState _adLoadingState = _LoadingState.initial;
 
@@ -64,8 +61,9 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
         if (_currentOrientation == orientation &&
             _bannerAd != null &&
             _adLoadingState == _LoadingState.loaded) {
-          _log.info(() => 'We have everything we need. Showing the ad '
-              '${_bannerAd.hashCode} now.');
+          debugPrint(
+              '[INFO] We have everything we need. Showing the ad ${_bannerAd.hashCode} now.');
+
           return SizedBox(
             width: _bannerAd!.size.width.toDouble(),
             height: _bannerAd!.size.height.toDouble(),
@@ -74,7 +72,8 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
         }
         // Reload the ad if the orientation changes.
         if (_currentOrientation != orientation) {
-          _log.info('Orientation changed');
+          debugPrint('[INFO] Orientation changed.');
+
           _currentOrientation = orientation;
           _loadAd();
         }
@@ -91,7 +90,8 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
 
   @override
   void dispose() {
-    _log.info('disposing ad');
+    debugPrint('[INFO] Disposing ad.');
+
     _bannerAd?.dispose();
     super.dispose();
   }
@@ -103,7 +103,8 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
     final adsController = context.read<AdsController>();
     final ad = adsController.takePreloadedAd();
     if (ad != null) {
-      _log.info("A preloaded banner was supplied. Using it.");
+      debugPrint('[INFO] A preloaded banner was supplied. Using it.');
+
       _showPreloadedAd(ad);
     } else {
       _loadAd();
@@ -113,15 +114,18 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   /// Load (another) ad, disposing of the current ad if there is one.
   Future<void> _loadAd() async {
     if (!mounted) return;
-    _log.info('_loadAd() called.');
+    debugPrint('[INFO] _loadAd() called.');
+
     if (_adLoadingState == _LoadingState.loading ||
         _adLoadingState == _LoadingState.disposing) {
-      _log.info('An ad is already being loaded or disposed. Aborting.');
+      debugPrint('[INFO] An ad is already being loaded or disposed. Aborting.');
+
       return;
     }
     _adLoadingState = _LoadingState.disposing;
     await _bannerAd?.dispose();
-    _log.fine('_bannerAd disposed');
+    debugPrint('[FINE] _bannerAd disposed.');
+
     if (!mounted) return;
 
     setState(() {
@@ -145,11 +149,11 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
               availableWidth);
 
       if (adaptiveSize == null) {
-        _log.warning('Unable to get height of anchored adaptive banner. '
-            'Falling back to ${widget.fallbackSize.width}x${widget.fallbackSize.height}.');
+        debugPrint(
+            '[WARNING] Unable to get height of anchored adaptive banner. Falling back to ${widget.fallbackSize.width}x${widget.fallbackSize.height}.');
       } else {
-        _log.info(
-            'Falling back to ${widget.fallbackSize.width}x${widget.fallbackSize.height}.');
+        debugPrint(
+            '[INFO] Falling back to ${widget.fallbackSize.width}x${widget.fallbackSize.height}.');
 
         size = adaptiveSize;
       }
@@ -169,27 +173,29 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
       request: const AdRequest(),
       listener: BannerAdListener(
         onAdLoaded: (ad) {
-          _log.info(() => 'Ad loaded: ${ad.responseInfo} '
-              '(${(ad as BannerAd).size.width}x${ad.size.height})');
+          debugPrint(
+              '[INFO] Ad loaded: ${ad.responseInfo} (${(ad as BannerAd).size.width}x${ad.size.height}) ');
+
           setState(() {
             // When the ad is loaded, get the ad size and use it to set
             // the height of the ad container.
-            _bannerAd = ad as BannerAd;
+            _bannerAd = ad;
             _adLoadingState = _LoadingState.loaded;
           });
         },
         onAdFailedToLoad: (ad, error) {
-          _log.warning('Banner failedToLoad: $error');
+          debugPrint('[WARNING] Banner failedToLoad: $error ');
+
           ad.dispose();
           if (mounted) {
             setState(() => _adLoadingState = _LoadingState.initial);
           }
         },
         onAdImpression: (ad) {
-          _log.info('Ad impression registered');
+          debugPrint('[INFO] Ad impression registered');
         },
         onAdClicked: (ad) {
-          _log.info('Ad click registered');
+          debugPrint('[INFO] Ad click registered');
         },
       ),
     );
@@ -203,7 +209,8 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
     try {
       _bannerAd = await ad.ready;
     } on LoadAdError catch (error) {
-      _log.severe('Error when loading preloaded banner: $error');
+      debugPrint('[SEVERE] Error when loading preloaded banner: $error');
+
       unawaited(_loadAd());
       return;
     }

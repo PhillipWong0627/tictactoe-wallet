@@ -4,7 +4,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:logging/logging.dart' hide Level;
 import 'package:provider/provider.dart';
 import 'package:tictactoe/gen/assets.gen.dart';
 import 'package:tictactoe/src/ads/banner_ad_widget.dart';
@@ -39,7 +38,6 @@ class PlaySessionScreen extends StatefulWidget {
 }
 
 class _PlaySessionScreenState extends State<PlaySessionScreen> {
-  static final _log = Logger('PlaySessionScreen');
   final TauntManager _taunts = TauntManager();
 
   static const _celebrationDuration = Duration(milliseconds: 2000);
@@ -127,8 +125,8 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
                         // TODO: implement
                         //       (except maybe not, because in user testing,
                         //        nobody has ever touched this)
-                        ..onTap = () => _log
-                            .severe('Tapping opponent name NOT IMPLEMENTED'),
+                        ..onTap = () => debugPrint(
+                            '[SEVERE] Tapping opponent name NOT IMPLEMENTED'),
                     ),
                     mainBoardArea: Center(
                       child: DelayedAppear(
@@ -321,7 +319,7 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
     super.initState();
 
     opponent = widget.level.aiOpponentBuilder(widget.level.setting);
-    _log.info('$opponent enters the fray');
+    debugPrint('[INFO] $opponent enters the fray');
 
     _startOfPlay = DateTime.now();
 

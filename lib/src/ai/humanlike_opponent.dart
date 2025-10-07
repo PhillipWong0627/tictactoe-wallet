@@ -1,4 +1,4 @@
-import 'package:logging/logging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:tictactoe/src/ai/ai_opponent.dart';
 import 'package:tictactoe/src/game_internals/board_setting.dart';
 import 'package:tictactoe/src/game_internals/board_state.dart';
@@ -8,8 +8,6 @@ import 'package:tictactoe/src/game_internals/tile.dart';
 ///
 /// It makes moves that are similar to what a human player might make.
 class HumanlikeOpponent extends AiOpponent {
-  static final _log = Logger('HumanlikeOpponent');
-
   /// The relative weight the AI gives to own "plans". A stubborn AI will go
   /// ahead with its own k-in-a-row line despite the fact it should be defending
   /// against the opponents line instead.
@@ -186,7 +184,7 @@ class HumanlikeOpponent extends AiOpponent {
     }
 
     if (defaultBest) {
-      _log.warning("We didn't find any tile that would be both in "
+      debugPrint("[WARNING] We didn't find any tile that would be both in "
           "best play percentile of $bestPlayCount and humanlike play "
           "percentile of $humanlikePlayCount. Chose $best.");
     }

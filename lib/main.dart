@@ -6,7 +6,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
 import 'package:tictactoe/src/app_lifecycle/app_lifecycle_observer.dart';
 import 'package:tictactoe/src/navigation/app_router.dart';
@@ -23,8 +22,6 @@ import 'src/settings/persistence/settings_persistence.dart';
 import 'src/settings/settings.dart';
 import 'src/style/palette.dart';
 import 'src/style/snack_bar.dart';
-
-final Logger _log = Logger('main.dart');
 
 Future<void> main() async {
   // 1) Make sure plugins, SystemChrome, etc. are safe to call.
@@ -49,27 +46,7 @@ Future<void> main() async {
     }
   }
 
-  if (kDebugMode) {
-    // Log more when in debug mode.
-    Logger.root.level = Level.FINE;
-  }
-  // Subscribe to log messages.
-  Logger.root.onRecord.listen((record) {
-    final message = '${record.level.name}: ${record.time}: '
-        '${record.loggerName}: '
-        '${record.message}';
-
-    debugPrint(message);
-    // Add the message to the rotating Crashlytics log.
-    crashlytics?.log(message);
-
-    if (record.level >= Level.SEVERE) {
-      crashlytics?.recordError(message, filterStackTrace(StackTrace.current),
-          fatal: true);
-    }
-  });
-
-  _log.info('Going full screen');
+  debugPrint('[INFO] Going full screen');
   await SystemChrome.setEnabledSystemUIMode(
     SystemUiMode.edgeToEdge,
   );

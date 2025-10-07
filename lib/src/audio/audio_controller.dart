@@ -3,7 +3,6 @@ import 'dart:math';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/widgets.dart';
-import 'package:logging/logging.dart';
 
 import '../settings/settings.dart';
 import 'songs.dart';
@@ -11,8 +10,6 @@ import 'sounds.dart';
 
 /// Allows playing music and sound. A facade to `package:audioplayers`.
 class AudioController {
-  static final _log = Logger('AudioController');
-
   final AudioPlayer _musicPlayer;
 
   /// This is a list of [AudioPlayer] instances which are rotated to play
@@ -100,7 +97,8 @@ class AudioController {
 
   /// Preloads all sound effects.
   Future<void> initialize() async {
-    _log.info('Preloading sound effects');
+    debugPrint('[INFO] Preloading sound effects');
+
     // This assumes there is only a limited number of sound effects in the game.
     // If there are hundreds of long sound effect files, it's better
     // to be more selective when preloading.
@@ -118,20 +116,23 @@ class AudioController {
   void playSfx(SfxType type) {
     final muted = _settings?.muted.value ?? true;
     if (muted) {
-      _log.info(() => 'Ignoring playing sound ($type) because audio is muted.');
+      debugPrint(
+          '[INFO] Ignoring playing sound ($type) because audio is muted.');
+
       return;
     }
     final soundsOn = _settings?.soundsOn.value ?? false;
     if (!soundsOn) {
-      _log.info(() =>
-          'Ignoring playing sound ($type) because sounds are turned off.');
+      debugPrint(
+          '[INFO] Ignoring playing sound ($type) because sounds are turned off.');
+
       return;
     }
+    debugPrint('[INFO] Playing sound: $type');
 
-    _log.info(() => 'Playing sound: $type');
     final options = soundTypeToFilename(type);
     final filename = options[_random.nextInt(options.length)];
-    _log.info(() => '- Chosen filename: $filename');
+    debugPrint('[INFO] - Chosen filename: $filename');
 
     final currentPlayer = _sfxPlayers[_currentSfxPlayer];
     currentPlayer.play(AssetSource('sfx/$filename'),
@@ -140,7 +141,8 @@ class AudioController {
   }
 
   void _changeSong(void _) {
-    _log.info('Last song finished playing.');
+    debugPrint('[INFO] Last song finished playing.');
+
     // Put the song that just finished playing to the end of the playlist.
     _playlist.addLast(_playlist.removeFirst());
     // Play the next song.
@@ -190,42 +192,50 @@ class AudioController {
   }
 
   Future<void> _playFirstSongInPlaylist() async {
-    _log.info(() => 'Playing ${_playlist.first} now.');
+    debugPrint('[INFO] Playing ${_playlist.first} now.');
+
     await _musicPlayer.play(AssetSource('music/${_playlist.first.filename}'));
   }
 
   Future<void> _resumeMusic() async {
-    _log.info('Resuming music');
+    debugPrint('[INFO] Resuming music.');
+
     switch (_musicPlayer.state) {
       case PlayerState.paused:
-        _log.info('Calling _musicPlayer.resume()');
+        debugPrint('[INFO] Calling _musicPlayer.resume()');
         try {
           await _musicPlayer.resume();
         } catch (e) {
           // Sometimes, resuming fails with an "Unexpected" error.
-          _log.severe(e);
+          debugPrint('[SEVERE] $e');
+
           await _playFirstSongInPlaylist();
         }
         break;
       case PlayerState.stopped:
-        _log.info("resumeMusic() called when music is stopped. "
+        debugPrint("[INFO] resumeMusic() called when music is stopped. "
             "This probably means we haven't yet started the music. "
             "For example, the game was started with sound off.");
+
         await _playFirstSongInPlaylist();
         break;
       case PlayerState.playing:
-        _log.warning('resumeMusic() called when music is playing. '
+        debugPrint('[WARNING] resumeMusic() called when music is playing. '
             'Nothing to do.');
+
         break;
       case PlayerState.completed:
-        _log.warning('resumeMusic() called when music is completed. '
+        debugPrint('[WARNING] resumeMusic() called when music is completed. '
             "Music should never be 'completed' as it's either not playing "
-            "or looping forever.");
+            "or looping forever.'");
+
         await _playFirstSongInPlaylist();
         break;
       case PlayerState.disposed:
-        _log.severe('resumeMusic() called after player had been disposed. '
+        debugPrint(
+            '[SEVERE] resumeMusic() called after player had been disposed. '
             'We cannot use the player anymore. Ignoring.');
+
         break;
     }
   }
@@ -239,7 +249,8 @@ class AudioController {
   }
 
   void _startMusic() {
-    _log.info('starting music');
+    debugPrint('[INFO] starting music');
+
     _playFirstSongInPlaylist();
   }
 
@@ -253,7 +264,8 @@ class AudioController {
   }
 
   void _stopMusic() {
-    _log.info('Stopping music');
+    debugPrint('[INFO] Stopping music');
+
     if (_musicPlayer.state == PlayerState.playing) {
       _musicPlayer.pause();
     }
