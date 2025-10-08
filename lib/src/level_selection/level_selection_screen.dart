@@ -131,7 +131,7 @@ class _LevelButton extends StatelessWidget {
               );
             }
           },
-          soundEffect: SfxType.erase,
+          soundEffect: SfxType.magic,
           child: SizedBox.expand(
             child: Stack(
               alignment: Alignment.center,

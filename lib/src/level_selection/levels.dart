@@ -20,7 +20,7 @@ final gameLevels = [
   ),
   GameLevel(
     number: 2,
-    setting: const BoardSetting(5, 5, 4),
+    setting: const BoardSetting(5, 5, 4, aiStarts: true),
     difficulty: 2,
     aiOpponentBuilder: (setting) => HumanlikeOpponent(
       setting,
@@ -102,7 +102,7 @@ final gameLevels = [
   ),
   GameLevel(
     number: 9,
-    setting: const BoardSetting(11, 11, 5),
+    setting: const BoardSetting(11, 11, 5, aiStarts: true),
     difficulty: 20,
     aiOpponentBuilder: (setting) => HumanlikeOpponent(
       setting,

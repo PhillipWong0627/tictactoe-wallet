@@ -181,51 +181,37 @@ class $AssetsImagesGen {
 class $AssetsMusicGen {
   const $AssetsMusicGen();
 
-  /// File path: assets/music/Mr_Smith-Azul.mp3
-  String get mrSmithAzul => 'assets/music/Mr_Smith-Azul.mp3';
-
-  /// File path: assets/music/Mr_Smith-Black_Top.mp3
-  String get mrSmithBlackTop => 'assets/music/Mr_Smith-Black_Top.mp3';
-
-  /// File path: assets/music/Mr_Smith-Pequenas_Guitarras.mp3
-  String get mrSmithPequenasGuitarras =>
-      'assets/music/Mr_Smith-Pequenas_Guitarras.mp3';
-
-  /// File path: assets/music/Mr_Smith-Reflector.mp3
-  String get mrSmithReflector => 'assets/music/Mr_Smith-Reflector.mp3';
-
-  /// File path: assets/music/Mr_Smith-Sonorus.mp3
-  String get mrSmithSonorus => 'assets/music/Mr_Smith-Sonorus.mp3';
-
-  /// File path: assets/music/Mr_Smith-Sunday_Solitude.mp3
-  String get mrSmithSundaySolitude =>
-      'assets/music/Mr_Smith-Sunday_Solitude.mp3';
-
-  /// File path: assets/music/Mr_Smith-The_Get_Away.mp3
-  String get mrSmithTheGetAway => 'assets/music/Mr_Smith-The_Get_Away.mp3';
-
-  /// File path: assets/music/Mr_Smith-The_Mariachi.mp3
-  String get mrSmithTheMariachi => 'assets/music/Mr_Smith-The_Mariachi.mp3';
-
-  /// File path: assets/music/Mr_Smith-This_Could_Get_Dark.mp3
-  String get mrSmithThisCouldGetDark =>
-      'assets/music/Mr_Smith-This_Could_Get_Dark.mp3';
-
   /// File path: assets/music/README.md
   String get readme => 'assets/music/README.md';
 
+  /// File path: assets/music/bgm-blues-guitar-loop.mp3
+  String get bgmBluesGuitarLoop => 'assets/music/bgm-blues-guitar-loop.mp3';
+
+  /// File path: assets/music/electro-music-intro-new-sub.mp3
+  String get electroMusicIntroNewSub =>
+      'assets/music/electro-music-intro-new-sub.mp3';
+
+  /// File path: assets/music/game-music-loop-1.mp3
+  String get gameMusicLoop1 => 'assets/music/game-music-loop-1.mp3';
+
+  /// File path: assets/music/game-music-loop-7.mp3
+  String get gameMusicLoop7 => 'assets/music/game-music-loop-7.mp3';
+
+  /// File path: assets/music/intermissiontoon.mp3
+  String get intermissiontoon => 'assets/music/intermissiontoon.mp3';
+
+  /// File path: assets/music/video-game-loop-1.mp3
+  String get videoGameLoop1 => 'assets/music/video-game-loop-1.mp3';
+
   /// List of all assets
   List<String> get values => [
-        mrSmithAzul,
-        mrSmithBlackTop,
-        mrSmithPequenasGuitarras,
-        mrSmithReflector,
-        mrSmithSonorus,
-        mrSmithSundaySolitude,
-        mrSmithTheGetAway,
-        mrSmithTheMariachi,
-        mrSmithThisCouldGetDark,
-        readme
+        readme,
+        bgmBluesGuitarLoop,
+        electroMusicIntroNewSub,
+        gameMusicLoop1,
+        gameMusicLoop7,
+        intermissiontoon,
+        videoGameLoop1
       ];
 }
 

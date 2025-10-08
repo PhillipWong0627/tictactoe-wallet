@@ -70,10 +70,7 @@ class SettingsScreen extends StatelessWidget {
             //     }
             //   },
             // ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 20, horizontal: 8),
-              child: Text('Music by Mr Smith, used with permission.'),
-            ),
+
             Gaps.xl,
           ],
         ),

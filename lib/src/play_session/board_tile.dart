@@ -59,7 +59,7 @@ class _BoardTileState extends State<BoardTile>
       // Also, play sound.
       final audioController = context.read<AudioController>();
       audioController.playSfx(
-        owner == Side.x ? SfxType.huhsh : SfxType.wssh,
+        owner == Side.x ? SfxType.buttonTap : SfxType.transition,
       );
     }
 

@@ -57,7 +57,7 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
 
     // optional niceties:
     final audio = context.read<AudioController>();
-    audio.playSfx(SfxType.buttonTap);
+    audio.playSfx(SfxType.notify);
 
     _resetHint.add(null); // bump the Restart button
     showInfoSnack("It's a draw - try again !");
@@ -135,7 +135,7 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
                         onDelayFinished: () {
                           final audioController =
                               context.read<AudioController>();
-                          audioController.playSfx(SfxType.swishSwish);
+                          audioController.playSfx(SfxType.transition);
                         },
                         child: Board(
                           key: const Key('main board'),
@@ -358,7 +358,7 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
     });
 
     final audioController = context.read<AudioController>();
-    audioController.playSfx(SfxType.congrats);
+    audioController.playSfx(SfxType.winChime);
 
     /// Give the player some time to see the celebration animation.
     await Future.delayed(_celebrationDuration);
