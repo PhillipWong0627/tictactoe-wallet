@@ -448,7 +448,8 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
   void _playerWon() async {
     _gameOver = true;
 
-    if (_modeForSession == GameMode.localPvP) {
+    if (_modeForSession == GameMode.localPvP ||
+        ((_modeForSession == GameMode.vsAI) && _isRpsVariant)) {
       showSnack("X wins! 🎉");
       return;
     }
@@ -459,6 +460,9 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
       widget.level.difficulty,
       DateTime.now().difference(_startOfPlay),
     );
+
+    final playerProgress = context.read<PlayerProgress>();
+    playerProgress.setLevelReached(widget.level.number);
 
     await Future<void>.delayed(_preCelebrationDuration);
     if (!mounted) return;
