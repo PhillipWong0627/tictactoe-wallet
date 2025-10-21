@@ -11,7 +11,7 @@ class SettingsController {
 
   ValueNotifier<String> playerName = ValueNotifier('Player');
   // Second player name for Local PvP
-  final ValueNotifier<String> player2Name = ValueNotifier('Player 2');
+  ValueNotifier<String> player2Name = ValueNotifier('Player 2');
 
   ValueNotifier<bool> soundsOn = ValueNotifier(false);
 

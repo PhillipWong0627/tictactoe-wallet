@@ -188,7 +188,6 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
                 return;
               }
               if (_isRpsVariant) _runRpsAndDispatch(state);
-              _runRpsAndDispatch(state);
             });
 
             return state;
@@ -221,16 +220,16 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
                                   fontSize: 24,
                                   color: palette.redPen,
                                 );
-
                         return _ResponsivePlaySessionScreen(
                           levelWidget: _LevelChip(number: widget.level.number),
                           playerName: TextSpan(
-                            text: playerName,
-                            style: textStyle,
-                            recognizer: TapGestureRecognizer()
-                              ..onTap = () => showCustomNameDialog(context,
-                                  isSecondPlayer: false),
-                          ),
+                              text: playerName,
+                              style: textStyle,
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  showCustomNameDialog(context,
+                                      isSecondPlayer: false);
+                                }),
                           opponentName: TextSpan(
                             text: (_modeForSession == GameMode.localPvP)
                                 ? context

@@ -24,7 +24,7 @@ void showCustomNameDialog(BuildContext context, {bool isSecondPlayer = false}) {
           Center(
               child: _LiveNameDialog(
             animation: a,
-            isSecondPlayer: true,
+            isSecondPlayer: isSecondPlayer,
           )),
         ],
       );
@@ -58,9 +58,14 @@ class _LiveNameDialogState extends State<_LiveNameDialog> {
 
   @override
   void didChangeDependencies() {
+    final settings = context.read<SettingsController>();
+
     // Initialize with current name
-    _controller.text = context.read<SettingsController>().playerName.value;
+    _controller.text = widget.isSecondPlayer
+        ? settings.player2Name.value
+        : settings.playerName.value;
     super.didChangeDependencies();
+
     // Auto-focus
     Future.microtask(() => _focus.requestFocus());
   }
@@ -121,7 +126,13 @@ class _LiveNameDialogState extends State<_LiveNameDialog> {
                 maxLength: 12,
                 maxLengthEnforcement: MaxLengthEnforcement.enforced,
                 onChanged: (value) {
-                  context.read<SettingsController>().setPlayerName(value);
+                  final settings = context.read<SettingsController>();
+                  if (widget.isSecondPlayer) {
+                    // either a setter or directly: settings.player2Name.value = value;
+                    settings.setPlayer2Name(value);
+                  } else {
+                    settings.setPlayerName(value);
+                  }
                 },
                 onSubmitted: (_) => Navigator.of(context).maybePop(),
                 decoration: InputDecoration(
