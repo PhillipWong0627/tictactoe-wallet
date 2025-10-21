@@ -254,7 +254,7 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
                               onDelayFinished: () {
                                 final audioController =
                                     context.read<AudioController>();
-                                audioController.playSfx(SfxType.swishSwish);
+                                audioController.playSfx(SfxType.transition);
                               },
                               child: IgnorePointer(
                                 ignoring: _duringCelebration || _awaitingRps,
@@ -435,7 +435,7 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
 
     _resetHint.add(null);
     if (_modeForSession == GameMode.localPvP) {
-      showSnackBar("O wins! 🏆");
+      showSnack("O wins! 🏆");
       return;
     }
     final msg = _taunts.maybeTaunt(event: 'ai_win');
@@ -450,7 +450,7 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
     _gameOver = true;
 
     if (_modeForSession == GameMode.localPvP) {
-      showSnackBar("X wins! 🎉");
+      showSnack("X wins! 🎉");
       return;
     }
 

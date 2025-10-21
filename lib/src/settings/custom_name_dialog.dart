@@ -8,78 +8,24 @@ import '../settings/settings.dart';
 void showCustomNameDialog(BuildContext context, {bool isSecondPlayer = false}) {
   showGeneralDialog(
     context: context,
-    pageBuilder: (
-      BuildContext context,
-      Animation<double> animation,
-      Animation<double> secondaryAnimation,
-    ) =>
-        CustomNameDialog(animation: animation, isSecondPlayer: isSecondPlayer),
-  );
-}
-
-class CustomNameDialog extends StatefulWidget {
-  final Animation<double> animation;
-  final bool isSecondPlayer;
-
-  const CustomNameDialog({
-    required this.animation,
-    this.isSecondPlayer = false,
-    super.key,
-  });
-
-  @override
-  State<CustomNameDialog> createState() => _CustomNameDialogState();
-}
-
-class _CustomNameDialogState extends State<CustomNameDialog> {
-  final TextEditingController _controller = TextEditingController();
-
-  @override
-  Widget build(BuildContext context) {
-    final settings = context.read<SettingsController>();
-
-    return ScaleTransition(
-      scale: CurvedAnimation(
-        parent: widget.animation,
-        curve: Curves.easeOutCubic,
-      ),
-      child: SimpleDialog(
-        title: Text('Change name'),
+    barrierDismissible: true,
+    barrierLabel: 'Change name',
+    barrierColor: Colors.black.withValues(alpha: 0.25),
+    transitionDuration: const Duration(milliseconds: 220),
+    pageBuilder: (ctx, a, sa) {
+      return Stack(
         children: [
-          TextField(
-            controller: _controller,
-            autofocus: true,
-            maxLength: 12,
-            maxLengthEnforcement: MaxLengthEnforcement.enforced,
-            textAlign: TextAlign.center,
-            textCapitalization: TextCapitalization.words,
-            textInputAction: TextInputAction.done,
-            onChanged: (value) {
-              if (widget.isSecondPlayer) {
-                settings.setPlayer2Name(value);
-              } else {
-                settings.setPlayerName(value);
-              }
-            },
-            onSubmitted: (value) {
-              Navigator.pop(context);
-            },
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
           Positioned.fill(
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
               child: const SizedBox.expand(),
             ),
           ),
-          Center(child: _LiveNameDialog(animation: a)),
+          Center(
+              child: _LiveNameDialog(
+            animation: a,
+            isSecondPlayer: true,
+          )),
         ],
       );
     },
@@ -97,8 +43,10 @@ class _CustomNameDialogState extends State<CustomNameDialog> {
 }
 
 class _LiveNameDialog extends StatefulWidget {
-  const _LiveNameDialog({required this.animation});
+  const _LiveNameDialog(
+      {required this.animation, required this.isSecondPlayer});
   final Animation<double> animation;
+  final bool isSecondPlayer;
 
   @override
   State<_LiveNameDialog> createState() => _LiveNameDialogState();
@@ -110,10 +58,8 @@ class _LiveNameDialogState extends State<_LiveNameDialog> {
 
   @override
   void didChangeDependencies() {
-    final settings = context.read<SettingsController>();
-    _controller.text = widget.isSecondPlayer
-        ? settings.player2Name.value
-        : settings.playerName.value;
+    // Initialize with current name
+    _controller.text = context.read<SettingsController>().playerName.value;
     super.didChangeDependencies();
     // Auto-focus
     Future.microtask(() => _focus.requestFocus());

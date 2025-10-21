@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:tictactoe/src/ads/ads_controller.dart';
-import 'package:tictactoe/src/level_selection/levels.dart';
 import 'package:tictactoe/src/rps/initiative_picker.dart';
+import 'package:tictactoe/src/level_selection/levels.dart';
 import 'package:tictactoe/src/style/dialog/dialog.dart';
 import 'package:tictactoe/src/widget/ads/watch_ad_badge.dart';
 
@@ -202,7 +202,7 @@ class _LevelButton extends StatelessWidget {
             );
           }
         },
-        soundEffect: SfxType.erase,
+        soundEffect: SfxType.magic,
         child: SizedBox.expand(
           child: Stack(
             alignment: Alignment.center,
