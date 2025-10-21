@@ -179,7 +179,7 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
                     actionsArea: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // UNDO (Watch Ads)
+                        // UNDO (Watch Ads) -
                         AdGatedAction(
                           enabled: context
                               .select<BoardState, bool>((s) => s.canUndo),
