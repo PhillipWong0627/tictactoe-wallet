@@ -301,37 +301,61 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  // Undo
-                                  InkResponse(
-                                    onTap: () {
+                                  // UNDO (Watch Ads) -
+                                  AdGatedAction(
+                                    enabled: context.select<BoardState, bool>(
+                                        (s) => s.canUndo),
+                                    isAvailable: (ctx) => ctx
+                                        .read<BoardState>()
+                                        .canUndo, // runtime guard
+                                    onUnavailable: () {
+                                      showWarningSnack(
+                                          "There is no previous move.");
+                                    },
+
+                                    requireConfirm: true,
+                                    onConfirm: (ctx) =>
+                                        showConfirmProceedDialog(
+                                      ctx,
+                                      title: 'Watch Ad?',
+                                      message:
+                                          'Watch an ad to undo your last move.',
+                                      confirmText: 'Watch Ad',
+                                      cancelText: 'Cancel',
+                                      icon: Icons.undo,
+                                    ),
+                                    onAllowed: () {
                                       final audio =
                                           context.read<AudioController>();
                                       audio.playSfx(SfxType.buttonTap);
-
                                       final state = context.read<BoardState>();
-
-                                      if (!state.canUndo) return;
-                                      // If you allow undo after win/lose, clear the stop-flag
-                                      setState(() {
-                                        _gameOver = false;
-                                      });
-                                      state.undoFullTurn();
-
-                                      if (_modeForSession == GameMode.vsAI &&
-                                          _isRpsVariant) {
-                                        _runRpsAndDispatch(
-                                            state); // only when RPS is on
-                                      }
+                                      if (state.canUndo) state.undoFullTurn();
                                     },
-                                    child: const Column(
+                                    child: Column(
                                       children: [
-                                        Icon(Icons.undo,
-                                            size: 32, color: Colors.black),
-                                        SizedBox(height: 4),
-                                        Text('Undo',
-                                            style: TextStyle(
-                                                fontFamily: 'Permanent Marker',
-                                                fontSize: 14)),
+                                        // Wrap the icon and badge together
+                                        Stack(
+                                          clipBehavior: Clip.none,
+                                          children: [
+                                            const Icon(Icons.undo,
+                                                size: 32, color: Colors.black),
+
+                                            // Position the badge bottom-right
+                                            Positioned(
+                                              right: -6, // tweak as needed
+                                              bottom: -6, // tweak as needed
+                                              child: const WatchAdBadge(),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 4),
+                                        const Text(
+                                          'Undo',
+                                          style: TextStyle(
+                                            fontFamily: 'Permanent Marker',
+                                            fontSize: 14,
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),
