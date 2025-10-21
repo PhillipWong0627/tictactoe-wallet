@@ -5,34 +5,23 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
 import 'package:tictactoe/src/app_lifecycle/app_lifecycle_observer.dart';
+import 'package:tictactoe/src/navigation/app_router.dart';
 
 import 'firebase_options.dart';
 import 'src/ads/ads_controller.dart';
 import 'src/audio/audio_controller.dart';
 import 'src/crashlytics/crashlytics.dart';
-import 'src/games_services/score.dart';
-import 'src/level_selection/level_selection_screen.dart';
-import 'src/level_selection/levels.dart';
-import 'src/main_menu/main_menu_screen.dart';
-import 'src/play_session/play_session_screen.dart';
 import 'src/player_progress/persistence/local_storage_player_progress_persistence.dart';
 import 'src/player_progress/persistence/player_progress_persistence.dart';
 import 'src/player_progress/player_progress.dart';
 import 'src/settings/persistence/local_storage_settings_persistence.dart';
 import 'src/settings/persistence/settings_persistence.dart';
 import 'src/settings/settings.dart';
-import 'src/settings/settings_screen.dart';
-import 'src/style/ink_transition.dart';
 import 'src/style/palette.dart';
 import 'src/style/snack_bar.dart';
-import 'src/win_game/win_game_screen.dart';
-
-final Logger _log = Logger('main.dart');
 
 Future<void> main() async {
   // 1) Make sure plugins, SystemChrome, etc. are safe to call.
@@ -57,27 +46,7 @@ Future<void> main() async {
     }
   }
 
-  if (kDebugMode) {
-    // Log more when in debug mode.
-    Logger.root.level = Level.FINE;
-  }
-  // Subscribe to log messages.
-  Logger.root.onRecord.listen((record) {
-    final message = '${record.level.name}: ${record.time}: '
-        '${record.loggerName}: '
-        '${record.message}';
-
-    debugPrint(message);
-    // Add the message to the rotating Crashlytics log.
-    crashlytics?.log(message);
-
-    if (record.level >= Level.SEVERE) {
-      crashlytics?.recordError(message, filterStackTrace(StackTrace.current),
-          fatal: true);
-    }
-  });
-
-  _log.info('Going full screen');
+  debugPrint('[INFO] Going full screen');
   await SystemChrome.setEnabledSystemUIMode(
     SystemUiMode.edgeToEdge,
   );
@@ -90,13 +59,6 @@ Future<void> main() async {
     await MobileAds.instance.initialize();
     adsController = AdsController(MobileAds.instance)..initialize();
   }
-
-  // GamesServicesController? gamesServicesController;
-  // if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) {
-  //   gamesServicesController = GamesServicesController()
-  //     // Attempt to log the player in.
-  //     ..initialize();
-  // }
 
   runApp(
     MyApp(
@@ -119,70 +81,6 @@ class MyApp extends StatelessWidget {
   final PlayerProgressPersistence playerProgressPersistence;
   final SettingsPersistence settingsPersistence;
   final AdsController? adsController;
-
-  // Define Routes Here
-  static final _router = GoRouter(
-    routes: [
-      GoRoute(
-          path: '/',
-          builder: (context, state) =>
-              const MainMenuScreen(key: Key('main menu')),
-          routes: [
-            GoRoute(
-                path: 'play',
-                pageBuilder: (context, state) => buildTransition<void>(
-                      child: const LevelSelectionScreen(
-                          key: Key('level selection')),
-                      color: context.watch<Palette>().backgroundLevelSelection,
-                    ),
-                routes: [
-                  GoRoute(
-                    path: 'session/:level',
-                    pageBuilder: (context, state) {
-                      final levelNumber =
-                          int.parse(state.pathParameters['level']!);
-                      final level = gameLevels
-                          .singleWhere((e) => e.number == levelNumber);
-                      return buildTransition<void>(
-                        child: PlaySessionScreen(
-                          level,
-                          key: const Key('play session'),
-                        ),
-                        color: context.watch<Palette>().backgroundPlaySession,
-                        flipHorizontally: true,
-                      );
-                    },
-                  ),
-                  GoRoute(
-                    path: 'won',
-                    pageBuilder: (context, state) {
-                      final map = state.extra! as Map<String, dynamic>;
-                      final score = map['score'] as Score;
-
-                      return buildTransition<void>(
-                        child: WinGameScreen(
-                          score: score,
-                          key: const Key('win game'),
-                        ),
-                        color: context.watch<Palette>().backgroundPlaySession,
-                        flipHorizontally: true,
-                      );
-                    },
-                  )
-                ]),
-            GoRoute(
-              path: 'settings',
-              pageBuilder: (context, state) {
-                return buildTransition<void>(
-                  color: context.watch<Palette>().backgroundPlaySession,
-                  flipHorizontally: true,
-                  child: const SettingsScreen(key: Key('settings')),
-                );
-              },
-            ),
-          ]),
-    ],
-  );
 
   @override
   Widget build(BuildContext context) {
@@ -226,23 +124,22 @@ class MyApp extends StatelessWidget {
         ],
         child: Builder(builder: (context) {
           final palette = context.watch<Palette>();
+          final scheme = ColorScheme.fromSeed(
+            seedColor: palette.darkPen,
+            surface: palette.backgroundMain,
+          );
 
           return MaterialApp.router(
             title: 'Flutter Demo',
-            theme: ThemeData.from(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: palette.darkPen,
-                background: palette.backgroundMain,
-              ),
-              textTheme: TextTheme(
-                bodyMedium: TextStyle(
-                  color: palette.ink,
-                ),
+            theme: ThemeData(
+              useMaterial3: true,
+              colorScheme: scheme,
+              textTheme: TextTheme().apply(
+                bodyColor: palette.ink,
+                displayColor: palette.ink,
               ),
             ),
-            routeInformationProvider: _router.routeInformationProvider,
-            routeInformationParser: _router.routeInformationParser,
-            routerDelegate: _router.routerDelegate,
+            routerConfig: appRouter,
             scaffoldMessengerKey: scaffoldMessengerKey,
           );
         }),

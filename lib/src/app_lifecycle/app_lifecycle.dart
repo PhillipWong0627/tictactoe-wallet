@@ -1,5 +1,4 @@
 import 'package:flutter/widgets.dart';
-import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
 
 class AppLifecycleObserver extends StatefulWidget {
@@ -13,8 +12,6 @@ class AppLifecycleObserver extends StatefulWidget {
 
 class _AppLifecycleObserverState extends State<AppLifecycleObserver>
     with WidgetsBindingObserver {
-  static final _log = Logger('AppLifecycleObserver');
-
   final ValueNotifier<AppLifecycleState> lifecycleListenable =
       ValueNotifier(AppLifecycleState.inactive);
 
@@ -40,7 +37,8 @@ class _AppLifecycleObserverState extends State<AppLifecycleObserver>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    _log.info(() => 'didChangeAppLifecycleState: $state');
+    debugPrint('[INFO] didChangeAppLifecycleState: $state');
+
     lifecycleListenable.value = state;
   }
 
@@ -54,6 +52,6 @@ class _AppLifecycleObserverState extends State<AppLifecycleObserver>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _log.info('Subscribed to app lifecycle updates');
+    debugPrint('[INFO] Subscribed to app lifecycle updates');
   }
 }

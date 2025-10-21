@@ -3,19 +3,21 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:logging/logging.dart' hide Level;
 import 'package:provider/provider.dart';
+import 'package:tictactoe/gen/assets.gen.dart';
 import 'package:tictactoe/src/ads/banner_ad_widget.dart';
 import 'package:tictactoe/src/play_session/taunt_manager.dart';
 import 'package:tictactoe/src/rps/rps.dart';
 import 'package:tictactoe/src/rps/rps_inline_bar.dart';
+import 'package:tictactoe/src/style/dialog/dialog.dart';
 import 'package:tictactoe/src/style/snack_bar.dart';
+import 'package:tictactoe/src/widget/ads/ad_gated_action.dart';
+import 'package:tictactoe/src/widget/ads/watch_ad_badge.dart';
 
 import '../ai/ai_opponent.dart';
 import '../audio/audio_controller.dart';
 import '../audio/sounds.dart';
 import '../game_internals/board_state.dart';
-import '../games_services/games_services.dart';
 import '../games_services/score.dart';
 import '../level_selection/levels.dart';
 import '../player_progress/player_progress.dart';
@@ -37,7 +39,6 @@ class PlaySessionScreen extends StatefulWidget {
 }
 
 class _PlaySessionScreenState extends State<PlaySessionScreen> {
-  static final _log = Logger('PlaySessionScreen');
   final TauntManager _taunts = TauntManager();
 
   static const _celebrationDuration = Duration(milliseconds: 2000);
@@ -56,9 +57,10 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
   void _onDraw() {
     if (!mounted) return;
     final audio = context.read<AudioController>();
-    audio.playSfx(SfxType.buttonTap);
-    _resetHint.add(null);
-    showSnackBar("It's a draw - try again !");
+    audio.playSfx(SfxType.notify);
+
+    _resetHint.add(null); // bump the Restart button
+    showInfoSnack("It's a draw - try again !");
   }
 
   bool _awaitingRps = false; // block taps during RPS
@@ -423,7 +425,8 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
   void initState() {
     super.initState();
     opponent = widget.level.aiOpponentBuilder(widget.level.setting);
-    _log.info('$opponent enters the fray');
+    debugPrint('[INFO] $opponent enters the fray');
+
     _startOfPlay = DateTime.now();
   }
 
@@ -437,7 +440,10 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
     }
     final msg = _taunts.maybeTaunt(event: 'ai_win');
     if (!mounted) return;
-    if (msg != null) showSnackBar(msg);
+
+    if (msg != null) {
+      showInfoSnack(msg);
+    }
   }
 
   void _playerWon() async {
@@ -461,31 +467,9 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
     setState(() => _duringCelebration = true);
 
     final audioController = context.read<AudioController>();
-    audioController.playSfx(SfxType.congrats);
+    audioController.playSfx(SfxType.winChime);
 
-    // Only count progress/leaderboard if NOT in RPS variant
-    if (!_isRpsVariant) {
-      context.read<PlayerProgress>().setLevelReached(widget.level.number);
-
-      final gamesServicesController = context.read<GamesServicesController?>();
-      if (gamesServicesController != null) {
-        if (widget.level.awardsAchievement) {
-          gamesServicesController.awardAchievement(
-            android: widget.level.achievementIdAndroid!,
-            iOS: widget.level.achievementIdIOS!,
-          );
-        }
-
-        gamesServicesController.submitLeaderboardScore(score);
-      }
-    } else {
-      //  Vs RPS: fun mode — no progress, no leaderboard
-      await Future.delayed(_celebrationDuration);
-      if (!mounted) return;
-      GoRouter.of(context).pop(); // just go back to level select
-      showSnackBar("You won! But RPS mode doesn’t count toward progress 🎲");
-    }
-
+    /// Give the player some time to see the celebration animation.
     await Future.delayed(_celebrationDuration);
     if (!mounted) return;
     GoRouter.of(context).go('/play/won', extra: {'score': score});

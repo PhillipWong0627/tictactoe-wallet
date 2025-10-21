@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
 
 import '../audio/audio_controller.dart';
@@ -15,8 +14,6 @@ class BoardTile extends StatefulWidget {
 
   /// The tile's position on the board.
   final Tile tile;
-
-  static final Logger _log = Logger('_BoardTile');
 
   @override
   State<BoardTile> createState() => _BoardTileState();
@@ -62,7 +59,7 @@ class _BoardTileState extends State<BoardTile>
       // Also, play sound.
       final audioController = context.read<AudioController>();
       audioController.playSfx(
-        owner == Side.x ? SfxType.huhsh : SfxType.wssh,
+        owner == Side.x ? SfxType.buttonTap : SfxType.transition,
       );
     }
 
@@ -118,11 +115,11 @@ class _BoardTileState extends State<BoardTile>
           // Ignore input when the tile is already taken by someone.
           // But keep this InkWell active, so the player can more easily
           // navigate the field with a controller / keyboard.
-          BoardTile._log.info('Cannot take ${widget.tile}.');
+          debugPrint('[INFO] Cannot take ${widget.tile}.');
         } else if (state.isLocked) {
           // Ignore input when the board is locked.
           // But keep the InkWell active, for the same reason as above.
-          BoardTile._log.info('Can take ${widget.tile} but board is locked.');
+          debugPrint('[INFO] Can take ${widget.tile} but board is locked');
         } else {
           state.take(widget.tile);
         }

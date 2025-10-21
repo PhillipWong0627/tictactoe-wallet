@@ -1,6 +1,4 @@
-Music in the game is by Mr Smith, and licensed under Creative Commons
-Attribution 4.0 International (CC BY 4.0).
+Music in the game is by Pixabay
 
 https://freemusicarchive.org/music/mr-smith
 
-Mr Smith's music is used in this project with his explicit permission.

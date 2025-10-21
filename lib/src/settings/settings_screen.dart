@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-
-import '../player_progress/player_progress.dart';
+import 'package:tictactoe/src/style/spacing.dart';
 import '../style/palette.dart';
 import '../style/responsive_screen.dart';
 import '../style/rough/button.dart';
@@ -11,8 +10,6 @@ import 'settings.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
-
-  static const _gap = SizedBox(height: 60);
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +21,7 @@ class SettingsScreen extends StatelessWidget {
       body: ResponsiveScreen(
         squarishMainArea: ListView(
           children: [
-            _gap,
+            Gaps.xl,
             const Text(
               'Settings',
               textAlign: TextAlign.center,
@@ -34,7 +31,8 @@ class SettingsScreen extends StatelessWidget {
                 height: 1,
               ),
             ),
-            _gap,
+            Gaps.xl,
+
             const _NameChangeLine(
               'Name',
             ),
@@ -54,50 +52,26 @@ class SettingsScreen extends StatelessWidget {
                 onSelected: () => settings.toggleMusicOn(),
               ),
             ),
-            // Consumer<InAppPurchaseController?>(
-            //     builder: (context, inAppPurchase, child) {
-            //   if (inAppPurchase == null) {
-            //     // In-app purchases are not supported yet.
-            //     return const SizedBox.shrink();
-            //   }
+            // _SettingsLine(
+            //   'Reset progress',
+            //   const Icon(Icons.delete),
+            //   onSelected: () async {
+            //     // show confirm dialog before Reset
+            //     final ok = await showConfirmProceedDialog(
+            //       context,
+            //       title: 'Reset Progress?',
+            //       message: 'Do you want to reset your progress?',
+            //       confirmText: 'Yes',
+            //       cancelText: 'Cancel',
+            //     );
+            //     if (ok) {
+            //       context.read<PlayerProgress>().reset();
+            //       showSuccessSnack("Player progress has been reset.");
+            //     }
+            //   },
+            // ),
 
-            //   Widget icon;
-            //   VoidCallback? callback;
-            //   if (inAppPurchase.adRemoval.active) {
-            //     icon = const Icon(Icons.check);
-            //   } else if (inAppPurchase.adRemoval.pending) {
-            //     icon = const CircularProgressIndicator();
-            //   } else {
-            //     icon = const Icon(Icons.ad_units);
-            //     callback = () {
-            //       inAppPurchase.buy();
-            //     };
-            //   }
-            //   return _SettingsLine(
-            //     'Remove ads',
-            //     icon,
-            //     onSelected: callback,
-            //   );
-            // }),
-            _SettingsLine(
-              'Reset progress',
-              const Icon(Icons.delete),
-              onSelected: () {
-                context.read<PlayerProgress>().reset();
-
-                final messenger = ScaffoldMessenger.of(context);
-                messenger.clearSnackBars();
-                messenger.showSnackBar(
-                  const SnackBar(
-                      content: Text('Player progress has been reset.')),
-                );
-              },
-            ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 20, horizontal: 8),
-              child: Text('Music by Mr Smith, used with permission.'),
-            ),
-            _gap,
+            Gaps.xl,
           ],
         ),
         rectangularMenuArea: RoughButton(

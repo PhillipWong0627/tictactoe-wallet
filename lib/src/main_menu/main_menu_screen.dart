@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:tictactoe/gen/assets.gen.dart';
+import 'package:tictactoe/src/style/spacing.dart';
 
 import '../audio/sounds.dart';
-import '../games_services/games_services.dart';
 import '../settings/settings.dart';
 import '../style/palette.dart';
 import '../style/responsive_screen.dart';
@@ -16,7 +17,6 @@ class MainMenuScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.watch<Palette>();
-    final gamesServicesController = context.watch<GamesServicesController?>();
     final settingsController = context.watch<SettingsController>();
 
     return Scaffold(
@@ -27,12 +27,10 @@ class MainMenuScreen extends StatelessWidget {
           ms: 1000,
           child: Center(
             child: Transform.scale(
-              scale: 1.2,
-              child: Image.asset(
-                'assets/images/main-menu.png',
-                fit: BoxFit.cover,
-              ),
-            ),
+                scale: 1.2,
+                child: Assets.images.mainMenu.image(
+                  fit: BoxFit.cover,
+                )),
           ),
         ),
         rectangularMenuArea: Column(
@@ -47,34 +45,10 @@ class MainMenuScreen extends StatelessWidget {
                 drawRectangle: true,
                 textColor: palette.redPen,
                 fontSize: 42,
-                soundEffect: SfxType.erase,
+                soundEffect: SfxType.magic,
                 child: const Text('Play'),
               ),
             ),
-            // if (gamesServicesController != null) ...[
-            //   _hideUntilReady(
-            //     ready: gamesServicesController.signedIn,
-            //     // TODO: show an "active" animation on the button
-            //     child: DelayedAppear(
-            //       ms: 600,
-            //       child: RoughButton(
-            //         onTap: () => gamesServicesController.showAchievements(),
-            //         child: const Text('Achievements'),
-            //       ),
-            //     ),
-            //   ),
-            //   _hideUntilReady(
-            //     // TODO: show an "active" animation on the button
-            //     ready: gamesServicesController.signedIn,
-            //     child: DelayedAppear(
-            //       ms: 400,
-            //       child: RoughButton(
-            //         onTap: () => gamesServicesController.showLeaderboard(),
-            //         child: const Text('Leaderboard'),
-            //       ),
-            //     ),
-            //   ),
-            // ],
             DelayedAppear(
               ms: 200,
               child: RoughButton(
@@ -97,9 +71,7 @@ class MainMenuScreen extends StatelessWidget {
                 },
               ),
             ),
-            _gap,
-            const Text('Music by Mr Smith'),
-            _gap,
+            Gaps.sm,
           ],
         ),
       ),
@@ -124,6 +96,4 @@ class MainMenuScreen extends StatelessWidget {
       },
     );
   }
-
-  static const _gap = SizedBox(height: 10);
 }
